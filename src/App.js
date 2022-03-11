@@ -13,6 +13,7 @@ function App() {
       {tasks.map((task, idx) => (
         <div>
           <span key={idx}>{task}</span>
+          <button onClick={() => setTasks(tasks.filter((_, i) => i !== idx))}>X</button>
         </div>
       ))}
       <header className="App-header">
