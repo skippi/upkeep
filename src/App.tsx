@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 function App() {
   const [name, setName] = useState<string>("");
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [notesVisible, setNotesVisible] = useState<number[]>([]);
   useEffect(() => {
     const interval = setInterval(() => {
       setTasks([...tasks]);
@@ -23,6 +24,7 @@ function App() {
             {
               estimate: 0,
               name: name,
+              notes: "",
               sessions: [],
             },
           ])
@@ -84,11 +86,36 @@ function App() {
           </button>
           <button
             onClick={() => {
+              if (notesVisible.includes(idx)) {
+                setNotesVisible(notesVisible.filter((i) => i !== idx));
+                return;
+              }
+              setNotesVisible([...notesVisible, idx]);
+            }}
+          >
+            N
+          </button>
+          <button
+            onClick={() => {
               setTasks(tasks.filter((_, i) => i !== idx));
+              setNotesVisible(notesVisible.filter((i) => i !== idx));
             }}
           >
             X
           </button>
+          {notesVisible.includes(idx) && (
+            <div>
+              <textarea
+                onChange={(e) => {
+                  const newTasks = [...tasks];
+                  newTasks[idx].notes = e.target.value;
+                  setTasks(newTasks);
+                }}
+              >
+                {task.notes}
+              </textarea>
+            </div>
+          )}
         </div>
       ))}
       <div

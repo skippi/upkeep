@@ -3,6 +3,7 @@ import { Session } from "./Session";
 export interface Task {
   estimate: number;
   name: string;
+  notes: string;
   sessions: Session[];
 }
 
