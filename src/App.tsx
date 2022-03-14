@@ -1,9 +1,17 @@
-import logo from "./logo.svg";
+import { useEffect, useState } from "react";
 import "./App.css";
+import logo from "./logo.svg";
+import { clockOut, close, elapsedTime, isClockedIn, Task } from "./Task";
 
-import { close as closeSession } from "./Session";
-import { Task, elapsedTime, close } from "./Task";
-import { useState, useEffect } from "react";
+
+function toggleClock(tasks: Task[], idx: number) {
+  if (isClockedIn(tasks[idx])) {
+    clockOut(tasks[idx]);
+    return;
+  }
+  tasks.forEach(clockOut);
+  tasks[idx].sessions.push({ start: new Date(), end: null });
+}
 
 function App() {
   const [name, setName] = useState<string>("");
@@ -38,10 +46,7 @@ function App() {
         <div key={idx}>
           <span
             style={{
-              color:
-                task.sessions.length > 0 && !task.sessions.slice(-1)[0].end
-                  ? "green"
-                  : undefined,
+              color: isClockedIn(task) ? "green" : undefined,
             }}
           >
             {task.name} |
@@ -70,16 +75,7 @@ function App() {
           <button
             onClick={() => {
               const newTasks = [...tasks];
-              const currSessions = newTasks[idx].sessions;
-              if (currSessions.length !== 0 && !currSessions.slice(-1)[0].end) {
-                currSessions.slice(-1).forEach(closeSession);
-                setTasks(newTasks);
-                return;
-              }
-              newTasks
-                .flatMap((t) => t.sessions.slice(-1))
-                .forEach(closeSession);
-              newTasks[idx].sessions.push({ start: new Date(), end: null });
+              toggleClock(newTasks, idx);
               setTasks(newTasks);
             }}
           >

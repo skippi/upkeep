@@ -1,4 +1,4 @@
-import { Session, close as closeSession } from "./Session";
+import { close as closeSession, Session } from "./Session";
 
 export interface Task {
   completions: Date[];
@@ -8,8 +8,16 @@ export interface Task {
   sessions: Session[];
 }
 
+export function isClockedIn(task: Task) {
+  return task.sessions.length > 0 && !task.sessions.slice(-1)[0].end;
+}
+
 export function close(task: Task) {
   task.completions.push(new Date());
+  task.sessions.slice(-1).forEach(closeSession);
+}
+
+export function clockOut(task: Task) {
   task.sessions.slice(-1).forEach(closeSession);
 }
 
