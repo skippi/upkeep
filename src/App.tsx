@@ -1,7 +1,8 @@
 import logo from "./logo.svg";
 import "./App.css";
 
-import { Task, elapsedTime } from "./Task";
+import { close as closeSession } from "./Session";
+import { Task, elapsedTime, close } from "./Task";
 import { useState, useEffect } from "react";
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
           setTasks([
             ...tasks,
             {
+              completions: [],
               estimate: 0,
               name: name,
               notes: "",
@@ -70,14 +72,13 @@ function App() {
               const newTasks = [...tasks];
               const currSessions = newTasks[idx].sessions;
               if (currSessions.length !== 0 && !currSessions.slice(-1)[0].end) {
-                currSessions.slice(-1)[0].end = new Date();
+                currSessions.slice(-1).forEach(closeSession);
                 setTasks(newTasks);
                 return;
               }
               newTasks
                 .flatMap((t) => t.sessions.slice(-1))
-                .filter((s) => !s.end)
-                .forEach((s) => (s.end = new Date()));
+                .forEach(closeSession);
               newTasks[idx].sessions.push({ start: new Date(), end: null });
               setTasks(newTasks);
             }}
@@ -94,6 +95,15 @@ function App() {
             }}
           >
             N
+          </button>
+          <button
+            onClick={() => {
+              const newTasks = [...tasks];
+              close(newTasks[idx]);
+              setTasks(newTasks);
+            }}
+          >
+            C
           </button>
           <button
             onClick={() => {
