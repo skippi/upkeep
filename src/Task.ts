@@ -1,6 +1,7 @@
 import { Session } from "./Session";
 
 export interface Task {
+  estimate: number;
   name: string;
   sessions: Session[];
 }

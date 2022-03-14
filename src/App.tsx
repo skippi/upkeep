@@ -17,7 +17,16 @@ function App() {
     <div className="App">
       <input value={name} onChange={(e) => setName(e.target.value)} />
       <button
-        onClick={() => setTasks([...tasks, { name: name, sessions: [] }])}
+        onClick={() =>
+          setTasks([
+            ...tasks,
+            {
+              estimate: 0,
+              name: name,
+              sessions: [],
+            },
+          ])
+        }
       >
         Enter
       </button>
@@ -27,12 +36,33 @@ function App() {
             style={{
               color:
                 task.sessions.length > 0 && !task.sessions.slice(-1)[0].end
-                  ? "red"
+                  ? "green"
                   : undefined,
             }}
           >
-            {task.name} | {Math.round(elapsedTime(task) / 1000)}
+            {task.name} |
           </span>
+          &nbsp;
+          <span
+            style={{
+              color: elapsedTime(task) > task.estimate ? "red" : undefined,
+            }}
+          >
+            {Math.floor(elapsedTime(task) / 1000)}
+          </span>
+          &nbsp;|&nbsp;
+          <input
+            value={task.estimate / 1000}
+            onChange={(e) => {
+              let parsed = parseInt(e.target.value);
+              if (isNaN(parsed)) {
+                parsed = 0;
+              }
+              const newTasks = [...tasks];
+              newTasks[idx].estimate = parsed * 1000;
+              setTasks(newTasks);
+            }}
+          />
           <button
             onClick={() => {
               const newTasks = [...tasks];
@@ -61,6 +91,19 @@ function App() {
           </button>
         </div>
       ))}
+      <div
+        style={{
+          color:
+            tasks.map((t) => t.estimate).reduce((a, b) => a + b, 0) >
+            16 * 3600 * 1000
+              ? "red"
+              : undefined,
+        }}
+      >
+        {new Date(tasks.map((t) => t.estimate).reduce((a, b) => a + b, 0))
+          .toISOString()
+          .substring(11, 19)}
+      </div>
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
