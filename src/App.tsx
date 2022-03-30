@@ -1,9 +1,17 @@
+import produce from "immer";
 import { useEffect, useState } from "react";
 import "./App.css";
+import {
+  AppState,
+  closeTask,
+  createTask,
+  elapsedTimeSession,
+  elapsedTimeTask,
+  isClockedInTask,
+  toggleClockTask,
+  totalTimeTask,
+} from "./AppState";
 import logo from "./logo.svg";
-import { clockOut, close, elapsedTime, isClockedIn, Task } from "./Task";
-import * as Tasks from "./Task";
-import * as Sessions from "./Session";
 
 function msToHHMMSS(milliseconds: number) {
   const seconds = Math.floor(milliseconds / 1000);
@@ -13,58 +21,45 @@ function msToHHMMSS(milliseconds: number) {
   return `${padZeroes(hours)}:${padZeroes(minutes)}:${padZeroes(seconds)}`;
 }
 
-function toggleClock(tasks: Task[], idx: number) {
-  if (isClockedIn(tasks[idx])) {
-    clockOut(tasks[idx]);
-    return;
-  }
-  tasks.forEach(clockOut);
-  tasks[idx].sessions.push({ start: new Date(), end: null });
-}
-
-function strictIncludes<T>(arr: T[], arrItem: T) {
-  const asStr = JSON.stringify(arrItem);
-  return arr.some((e) => JSON.stringify(e) === asStr);
-}
-
 function App() {
   const [name, setName] = useState<string>("");
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [app, setApp] = useState<AppState>({
+    completions: {},
+    sessions: {},
+    tasks: {},
+  });
   const [notesVisible, setNotesVisible] = useState<number[]>([]);
   const [historyVisible, setHistoryVisible] = useState<number[]>([]);
-  const [taskCompletionNotesVisible, setTaskCompletionNotesVisible] = useState<
-    [number, number][]
-  >([]);
+  const [completionsVisible, setCompletionsVisible] = useState<number[]>([]);
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTasks([...tasks]);
-    }, 1000);
+    const interval = setInterval(() => setApp({ ...app }), 1000);
     return () => clearInterval(interval);
-  }, [tasks]);
+  }, [app]);
   return (
     <div className="App">
       <input value={name} onChange={(e) => setName(e.target.value)} />
       <button
         onClick={() =>
-          setTasks([
-            ...tasks,
-            {
-              completions: [],
-              estimate: 0,
-              name: name,
-              notes: "",
-              sessions: [],
-            },
-          ])
+          setApp(
+            produce(app, (draft) =>
+              createTask(draft, {
+                completions: [],
+                estimate: 0,
+                name: name,
+                notes: "",
+                sessions: [],
+              })
+            )
+          )
         }
       >
         Enter
       </button>
-      {tasks.map((task, idx) => (
-        <div key={idx}>
+      {Object.values(app.tasks).map((task) => (
+        <div key={task.id}>
           <span
             style={{
-              color: isClockedIn(task) ? "green" : undefined,
+              color: isClockedInTask(app, task.id) ? "green" : undefined,
             }}
           >
             {task.name} |
@@ -72,137 +67,160 @@ function App() {
           &nbsp;
           <span
             style={{
-              color: elapsedTime(task) > task.estimate ? "red" : undefined,
+              color:
+                elapsedTimeTask(app, task.id) > task.estimate
+                  ? "red"
+                  : undefined,
             }}
           >
-            {Math.floor(elapsedTime(task) / 1000)}
+            {msToHHMMSS(elapsedTimeTask(app, task.id))}
           </span>
           &nbsp;|&nbsp;
           <input
-            value={task.estimate / 1000}
+            value={msToHHMMSS(task.estimate)}
             onChange={(e) => {
               let parsed = parseInt(e.target.value);
               if (isNaN(parsed)) {
                 parsed = 0;
               }
-              const newTasks = [...tasks];
-              newTasks[idx].estimate = parsed * 1000;
-              setTasks(newTasks);
+              setApp(
+                produce(app, (draft) => {
+                  draft.tasks[task.id].estimate = parsed * 1000;
+                })
+              );
             }}
           />
           <button
-            onClick={() => {
-              const newTasks = [...tasks];
-              toggleClock(newTasks, idx);
-              setTasks(newTasks);
-            }}
+            onClick={() =>
+              setApp(produce(app, (draft) => toggleClockTask(draft, task.id)))
+            }
           >
             T
           </button>
           <button
             onClick={() => {
-              if (notesVisible.includes(idx)) {
-                setNotesVisible(notesVisible.filter((i) => i !== idx));
+              if (notesVisible.includes(task.id)) {
+                setNotesVisible(notesVisible.filter((i) => i !== task.id));
                 return;
               }
-              setNotesVisible([...notesVisible, idx]);
+              setNotesVisible([...notesVisible, task.id]);
             }}
           >
             N
           </button>
           <button
-            onClick={() => {
-              const newTasks = [...tasks];
-              close(newTasks[idx]);
-              setTasks(newTasks);
-            }}
+            onClick={() =>
+              setApp(produce(app, (draft) => closeTask(draft, task.id)))
+            }
           >
             C
           </button>
           <button
             onClick={() => {
-              if (historyVisible.includes(idx)) {
-                setHistoryVisible(historyVisible.filter((i) => i !== idx));
+              if (historyVisible.includes(task.id)) {
+                setHistoryVisible(historyVisible.filter((i) => i !== task.id));
                 return;
               }
-              setHistoryVisible([...historyVisible, idx]);
+              setHistoryVisible([...historyVisible, task.id]);
             }}
           >
             History
           </button>
           <button
             onClick={() => {
-              setTasks(tasks.filter((_, i) => i !== idx));
-              setNotesVisible(notesVisible.filter((i) => i !== idx));
+              setApp(
+                produce(app, (draft) => {
+                  draft.tasks[task.id].completions.forEach(
+                    (cid) => delete app.completions[cid]
+                  );
+                  draft.tasks[task.id].sessions.forEach(
+                    (sid) => delete app.completions[sid]
+                  );
+                  delete draft.tasks[task.id];
+                })
+              );
+              setNotesVisible(notesVisible.filter((i) => i !== task.id));
             }}
           >
             X
           </button>
-          {notesVisible.includes(idx) && (
+          {notesVisible.includes(task.id) && (
             <div>
               <textarea
-                onChange={(e) => {
-                  const newTasks = [...tasks];
-                  newTasks[idx].notes = e.target.value;
-                  setTasks(newTasks);
-                }}
-              >
-                {task.notes}
-              </textarea>
+                onChange={(e) =>
+                  setApp(
+                    produce(app, (draft) => {
+                      draft.tasks[task.id].notes = e.target.value;
+                    })
+                  )
+                }
+                value={task.notes}
+              />
             </div>
           )}
-          {historyVisible.includes(idx) && (
-            <div key={idx}>
-              <div>Total Time: {msToHHMMSS(Tasks.totalTime(tasks[idx]))}</div>
+          {historyVisible.includes(task.id) && (
+            <div key={task.id}>
+              <div>Total Time: {msToHHMMSS(totalTimeTask(app, task.id))}</div>
               <div>
                 <div>Completions</div>
-                {tasks[idx].completions.map((completion, k) => (
-                  <div key={JSON.stringify(["completion", idx, k])}>
-                    {completion.date.toISOString()}
-                    <button
-                      onClick={() => {
-                        if (
-                          strictIncludes(taskCompletionNotesVisible, [idx, k])
-                        ) {
-                          setTaskCompletionNotesVisible(
-                            taskCompletionNotesVisible.filter(
-                              ([a, b]) => a !== idx || b !== k
-                            )
-                          );
-                          return;
-                        }
-                        setTaskCompletionNotesVisible([
-                          ...taskCompletionNotesVisible,
-                          [idx, k],
-                        ]);
-                      }}
+                {task.completions
+                  .map((cid) => app.completions[cid])
+                  .map((completion) => (
+                    <div
+                      key={JSON.stringify([
+                        "completion",
+                        task.id,
+                        completion.id,
+                      ])}
                     >
-                      Notes
-                    </button>
-                    {strictIncludes(taskCompletionNotesVisible, [idx, k]) && (
-                      <div>
-                        <textarea
-                          onChange={(e) => {
-                            const newTasks = [...tasks];
-                            newTasks[idx].completions[k].notes = e.target.value;
-                            setTasks(newTasks);
-                          }}
-                          value={completion.notes}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      {completion.date.toISOString()}
+                      <button
+                        onClick={() => {
+                          if (completionsVisible.includes(completion.id)) {
+                            setCompletionsVisible(
+                              completionsVisible.filter(
+                                (a) => a !== completion.id
+                              )
+                            );
+                            return;
+                          }
+                          setCompletionsVisible([
+                            ...completionsVisible,
+                            completion.id,
+                          ]);
+                        }}
+                      >
+                        Notes
+                      </button>
+                      {completionsVisible.includes(completion.id) && (
+                        <div>
+                          <textarea
+                            onChange={(e) =>
+                              setApp(
+                                produce(app, (draft) => {
+                                  draft.completions[completion.id].notes =
+                                    e.target.value;
+                                })
+                              )
+                            }
+                            value={completion.notes}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
               </div>
               <div>
                 <div>Sessions</div>
-                {tasks[idx].sessions.map((session, k) => (
-                  <div key={JSON.stringify(["session", idx, k])}>
-                    {session.start.toISOString()} -{" "}
-                    {session.end?.toISOString() ?? ""} |{" "}
-                    {msToHHMMSS(Sessions.elapsedTime(session))}
-                  </div>
-                ))}
+                {task.sessions
+                  .map((sid) => app.sessions[sid])
+                  .map((session) => (
+                    <div key={JSON.stringify(["session", task.id, session.id])}>
+                      {session.start.toISOString()} -{" "}
+                      {session.end?.toISOString() ?? ""} |{" "}
+                      {msToHHMMSS(elapsedTimeSession(session))}
+                    </div>
+                  ))}
               </div>
             </div>
           )}
@@ -211,13 +229,19 @@ function App() {
       <div
         style={{
           color:
-            tasks.map((t) => t.estimate).reduce((a, b) => a + b, 0) >
+            Object.values(app.tasks)
+              .map((t) => t.estimate)
+              .reduce((a, b) => a + b, 0) >
             16 * 3600 * 1000
               ? "red"
               : undefined,
         }}
       >
-        {new Date(tasks.map((t) => t.estimate).reduce((a, b) => a + b, 0))
+        {new Date(
+          Object.values(app.tasks)
+            .map((t) => t.estimate)
+            .reduce((a, b) => a + b, 0)
+        )
           .toISOString()
           .substring(11, 19)}
       </div>
