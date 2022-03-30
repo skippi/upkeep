@@ -1,3 +1,4 @@
+import * as Sessions from "./Session";
 import { close as closeSession, Session } from "./Session";
 
 export interface Task {
@@ -24,9 +25,12 @@ export function clockOut(task: Task) {
 export function elapsedTime(task: Task) {
   return task.sessions
     .filter((s) => s.start >= (task.completions.slice(-1)[0] ?? new Date(0)))
-    .reduce((total, session) => {
-      const endTime = session.end ?? new Date();
-      const elapsedMs = endTime.getTime() - session.start.getTime();
-      return total + elapsedMs;
-    }, 0);
+    .reduce((total, session) => total + Sessions.elapsedTime(session), 0);
+}
+
+export function totalTime(task: Task) {
+  return task.sessions.reduce(
+    (total, session) => total + Sessions.elapsedTime(session),
+    0
+  );
 }

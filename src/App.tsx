@@ -2,7 +2,16 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import logo from "./logo.svg";
 import { clockOut, close, elapsedTime, isClockedIn, Task } from "./Task";
+import * as Tasks from "./Task";
+import * as Sessions from "./Session";
 
+function msToHHMMSS(milliseconds: number) {
+  const seconds = Math.floor(milliseconds / 1000);
+  const minutes = Math.floor(milliseconds / 60 / 1000);
+  const hours = Math.floor(milliseconds / 3600 / 1000);
+  const padZeroes = (v: number) => v.toString().padStart(2, "0");
+  return `${padZeroes(hours)}:${padZeroes(minutes)}:${padZeroes(seconds)}`;
+}
 
 function toggleClock(tasks: Task[], idx: number) {
   if (isClockedIn(tasks[idx])) {
@@ -17,6 +26,7 @@ function App() {
   const [name, setName] = useState<string>("");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [notesVisible, setNotesVisible] = useState<number[]>([]);
+  const [historyVisible, setHistoryVisible] = useState<number[]>([]);
   useEffect(() => {
     const interval = setInterval(() => {
       setTasks([...tasks]);
@@ -103,6 +113,17 @@ function App() {
           </button>
           <button
             onClick={() => {
+              if (historyVisible.includes(idx)) {
+                setHistoryVisible(historyVisible.filter((i) => i !== idx));
+                return;
+              }
+              setHistoryVisible([...historyVisible, idx]);
+            }}
+          >
+            History
+          </button>
+          <button
+            onClick={() => {
               setTasks(tasks.filter((_, i) => i !== idx));
               setNotesVisible(notesVisible.filter((i) => i !== idx));
             }}
@@ -120,6 +141,21 @@ function App() {
               >
                 {task.notes}
               </textarea>
+            </div>
+          )}
+          {historyVisible.includes(idx) && (
+            <div key={idx}>
+              <div>Total Time: {msToHHMMSS(Tasks.totalTime(tasks[idx]))}</div>
+              <div>
+                <div>Sessions</div>
+                {tasks[idx].sessions.map((session, k) => (
+                  <div key={JSON.stringify(["session", idx, k])}>
+                    {session.start.toISOString()} -{" "}
+                    {session.end?.toISOString() ?? ""} |{" "}
+                    {msToHHMMSS(Sessions.elapsedTime(session))}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
