@@ -22,11 +22,19 @@ function toggleClock(tasks: Task[], idx: number) {
   tasks[idx].sessions.push({ start: new Date(), end: null });
 }
 
+function strictIncludes<T>(arr: T[], arrItem: T) {
+  const asStr = JSON.stringify(arrItem);
+  return arr.some((e) => JSON.stringify(e) === asStr);
+}
+
 function App() {
   const [name, setName] = useState<string>("");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [notesVisible, setNotesVisible] = useState<number[]>([]);
   const [historyVisible, setHistoryVisible] = useState<number[]>([]);
+  const [taskCompletionNotesVisible, setTaskCompletionNotesVisible] = useState<
+    [number, number][]
+  >([]);
   useEffect(() => {
     const interval = setInterval(() => {
       setTasks([...tasks]);
@@ -146,6 +154,46 @@ function App() {
           {historyVisible.includes(idx) && (
             <div key={idx}>
               <div>Total Time: {msToHHMMSS(Tasks.totalTime(tasks[idx]))}</div>
+              <div>
+                <div>Completions</div>
+                {tasks[idx].completions.map((completion, k) => (
+                  <div key={JSON.stringify(["completion", idx, k])}>
+                    {completion.date.toISOString()}
+                    <button
+                      onClick={() => {
+                        if (
+                          strictIncludes(taskCompletionNotesVisible, [idx, k])
+                        ) {
+                          setTaskCompletionNotesVisible(
+                            taskCompletionNotesVisible.filter(
+                              ([a, b]) => a !== idx || b !== k
+                            )
+                          );
+                          return;
+                        }
+                        setTaskCompletionNotesVisible([
+                          ...taskCompletionNotesVisible,
+                          [idx, k],
+                        ]);
+                      }}
+                    >
+                      Notes
+                    </button>
+                    {strictIncludes(taskCompletionNotesVisible, [idx, k]) && (
+                      <div>
+                        <textarea
+                          onChange={(e) => {
+                            const newTasks = [...tasks];
+                            newTasks[idx].completions[k].notes = e.target.value;
+                            setTasks(newTasks);
+                          }}
+                          value={completion.notes}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
               <div>
                 <div>Sessions</div>
                 {tasks[idx].sessions.map((session, k) => (

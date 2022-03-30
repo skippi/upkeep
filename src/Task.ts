@@ -2,11 +2,16 @@ import * as Sessions from "./Session";
 import { close as closeSession, Session } from "./Session";
 
 export interface Task {
-  completions: Date[];
+  completions: Completion[];
   estimate: number;
   name: string;
   notes: string;
   sessions: Session[];
+}
+
+interface Completion {
+  date: Date;
+  notes: string;
 }
 
 export function isClockedIn(task: Task) {
@@ -14,7 +19,7 @@ export function isClockedIn(task: Task) {
 }
 
 export function close(task: Task) {
-  task.completions.push(new Date());
+  task.completions.push({ date: new Date(), notes: "" });
   task.sessions.slice(-1).forEach(closeSession);
 }
 
@@ -24,7 +29,7 @@ export function clockOut(task: Task) {
 
 export function elapsedTime(task: Task) {
   return task.sessions
-    .filter((s) => s.start >= (task.completions.slice(-1)[0] ?? new Date(0)))
+    .filter((s) => s.start >= (task.completions.slice(-1)[0].date ?? new Date(0)))
     .reduce((total, session) => total + Sessions.elapsedTime(session), 0);
 }
 
