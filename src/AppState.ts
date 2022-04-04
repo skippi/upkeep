@@ -10,6 +10,7 @@ export interface Task {
   estimate: number;
   name: string;
   notes: string;
+  scheduleDate: Date | null;
   sessions: number[];
 }
 
@@ -48,15 +49,19 @@ export function createTask(
     estimate: number;
     name: string;
     notes: string;
+    scheduleDate?: Date | null;
     sessions: number[];
   }
 ) {
   const id = generateId();
+  const scheduleDate = props.scheduleDate ?? null;
   app.tasks[id] = {
     ...props,
     id: id,
+    scheduleDate: scheduleDate,
   };
 }
+
 
 function closeSession(session: Session) {
   if (session.end) return;

@@ -65,6 +65,19 @@ function App() {
             {task.name} |
           </span>
           &nbsp;
+          <span>Scheduled: {task.scheduleDate?.toISOString()} |</span>
+          <button
+            onClick={(_) =>
+              setApp(
+                produce(app, (draft) => {
+                  draft.tasks[task.id].scheduleDate = new Date();
+                })
+              )
+            }
+          >
+            Schedule
+          </button>
+          &nbsp;
           <span
             style={{
               color:
