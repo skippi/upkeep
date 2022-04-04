@@ -1,20 +1,36 @@
 import AddIcon from "@mui/icons-material/Add";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import MenuIcon from "@mui/icons-material/Menu";
+import PauseIcon from "@mui/icons-material/Pause";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import {
-    AppBar, Box, Fab, IconButton, Paper, Toolbar, Typography
+  AppBar,
+  Box,
+  Divider,
+  Fab,
+  IconButton,
+  Input,
+  List,
+  ListItem,
+  ListItemText,
+  Paper,
+  Toolbar,
+  Typography,
 } from "@mui/material";
 import produce from "immer";
 import { useEffect, useState } from "react";
 import "./App.css";
 import {
-    AppState,
-    closeTask,
-    createTask,
-    elapsedTimeSession,
-    elapsedTimeTask,
-    isClockedInTask,
-    toggleClockTask,
-    totalTimeTask
+  AppState,
+  closeTask,
+  createTask,
+  elapsedTimeSession,
+  elapsedTimeTask,
+  isClockedInTask,
+  toggleClockTask,
+  totalTimeTask,
 } from "./AppState";
 
 function msToHHMMSS(milliseconds: number) {
@@ -32,6 +48,7 @@ function App() {
     sessions: {},
     tasks: {},
   });
+  const [taskInfoVisible, setTaskInfoVisible] = useState<number[]>([]);
   const [notesVisible, setNotesVisible] = useState<number[]>([]);
   const [historyVisible, setHistoryVisible] = useState<number[]>([]);
   const [completionsVisible, setCompletionsVisible] = useState<number[]>([]);
@@ -87,190 +104,244 @@ function App() {
       >
         Enter
       </button>
-      {Object.values(app.tasks).map((task) => (
-        <div key={task.id}>
-          <span
-            style={{
-              color: isClockedInTask(app, task.id) ? "green" : undefined,
-            }}
-          >
-            {task.name} |
-          </span>
-          &nbsp;
-          <span>Scheduled: {task.scheduleDate?.toISOString()} |</span>
-          <button
-            onClick={(_) =>
-              setApp(
-                produce(app, (draft) => {
-                  draft.tasks[task.id].scheduleDate = new Date();
-                })
-              )
-            }
-          >
-            Schedule
-          </button>
-          &nbsp;
-          <span
-            style={{
-              color:
-                elapsedTimeTask(app, task.id) > task.estimate
-                  ? "red"
-                  : undefined,
-            }}
-          >
-            {msToHHMMSS(elapsedTimeTask(app, task.id))}
-          </span>
-          &nbsp;|&nbsp;
-          <input
-            value={msToHHMMSS(task.estimate)}
-            onChange={(e) => {
-              let parsed = parseInt(e.target.value);
-              if (isNaN(parsed)) {
-                parsed = 0;
+      <List>
+        {Object.values(app.tasks).map((task, i) => (
+          <Box key={task.id}>
+            {i !== 0 && <Divider component="li" />}
+            <ListItem
+              secondaryAction={
+                <Box>
+                  <IconButton
+                    onClick={() =>
+                      setApp(
+                        produce(app, (draft) => toggleClockTask(draft, task.id))
+                      )
+                    }
+                  >
+                    {!isClockedInTask(app, task.id) && <PlayArrowIcon />}
+                    {isClockedInTask(app, task.id) && <PauseIcon />}
+                  </IconButton>
+                  <IconButton
+                    onClick={() => {
+                      if (taskInfoVisible.includes(task.id)) {
+                        setTaskInfoVisible(
+                          taskInfoVisible.filter((i) => i !== task.id)
+                        );
+                        return;
+                      }
+                      setTaskInfoVisible([...taskInfoVisible, task.id]);
+                    }}
+                  >
+                    {!taskInfoVisible.includes(task.id) ? (
+                      <ArrowDropDownIcon />
+                    ) : (
+                      <ArrowDropUpIcon />
+                    )}
+                  </IconButton>
+                </Box>
               }
-              setApp(
-                produce(app, (draft) => {
-                  draft.tasks[task.id].estimate = parsed * 1000;
-                })
-              );
-            }}
-          />
-          <button
-            onClick={() =>
-              setApp(produce(app, (draft) => toggleClockTask(draft, task.id)))
-            }
-          >
-            T
-          </button>
-          <button
-            onClick={() => {
-              if (notesVisible.includes(task.id)) {
-                setNotesVisible(notesVisible.filter((i) => i !== task.id));
-                return;
-              }
-              setNotesVisible([...notesVisible, task.id]);
-            }}
-          >
-            N
-          </button>
-          <button
-            onClick={() =>
-              setApp(produce(app, (draft) => closeTask(draft, task.id)))
-            }
-          >
-            C
-          </button>
-          <button
-            onClick={() => {
-              if (historyVisible.includes(task.id)) {
-                setHistoryVisible(historyVisible.filter((i) => i !== task.id));
-                return;
-              }
-              setHistoryVisible([...historyVisible, task.id]);
-            }}
-          >
-            History
-          </button>
-          <button
-            onClick={() => {
-              setApp(
-                produce(app, (draft) => {
-                  draft.tasks[task.id].completions.forEach(
-                    (cid) => delete app.completions[cid]
-                  );
-                  draft.tasks[task.id].sessions.forEach(
-                    (sid) => delete app.completions[sid]
-                  );
-                  delete draft.tasks[task.id];
-                })
-              );
-              setNotesVisible(notesVisible.filter((i) => i !== task.id));
-            }}
-          >
-            X
-          </button>
-          {notesVisible.includes(task.id) && (
-            <div>
-              <textarea
-                onChange={(e) =>
-                  setApp(
-                    produce(app, (draft) => {
-                      draft.tasks[task.id].notes = e.target.value;
-                    })
-                  )
-                }
-                value={task.notes}
-              />
-            </div>
-          )}
-          {historyVisible.includes(task.id) && (
-            <div key={task.id}>
-              <div>Total Time: {msToHHMMSS(totalTimeTask(app, task.id))}</div>
-              <div>
-                <div>Completions</div>
-                {task.completions
-                  .map((cid) => app.completions[cid])
-                  .map((completion) => (
-                    <div
-                      key={JSON.stringify([
-                        "completion",
-                        task.id,
-                        completion.id,
-                      ])}
-                    >
-                      {completion.date.toISOString()}
-                      <button
-                        onClick={() => {
-                          if (completionsVisible.includes(completion.id)) {
-                            setCompletionsVisible(
-                              completionsVisible.filter(
-                                (a) => a !== completion.id
-                              )
-                            );
-                            return;
-                          }
-                          setCompletionsVisible([
-                            ...completionsVisible,
-                            completion.id,
-                          ]);
-                        }}
-                      >
-                        Notes
-                      </button>
-                      {completionsVisible.includes(completion.id) && (
-                        <div>
-                          <textarea
-                            onChange={(e) =>
-                              setApp(
-                                produce(app, (draft) => {
-                                  draft.completions[completion.id].notes =
-                                    e.target.value;
-                                })
-                              )
-                            }
-                            value={completion.notes}
-                          />
-                        </div>
-                      )}
+            >
+              <ListItemText
+                sx={{
+                  color: isClockedInTask(app, task.id) ? "green" : undefined,
+                }}
+              >
+                {task.name}
+              </ListItemText>
+            </ListItem>
+            {taskInfoVisible.includes(task.id) && (
+              <Box component="li">
+                <Box>
+                  Scheduled: {task.scheduleDate?.toISOString()}
+                  <IconButton
+                    onClick={(_) =>
+                      setApp(
+                        produce(app, (draft) => {
+                          draft.tasks[task.id].scheduleDate = new Date();
+                        })
+                      )
+                    }
+                  >
+                    <CalendarMonthIcon />
+                  </IconButton>
+                </Box>
+                <Box>
+                  Time Taken:&nbsp;
+                  <Typography
+                    component="span"
+                    style={{
+                      color:
+                        elapsedTimeTask(app, task.id) > task.estimate
+                          ? "red"
+                          : undefined,
+                    }}
+                  >
+                    {msToHHMMSS(elapsedTimeTask(app, task.id))}
+                  </Typography>
+                </Box>
+                <Box>
+                  Estimate:&nbsp;
+                  <Input
+                    value={msToHHMMSS(task.estimate)}
+                    onChange={(e) => {
+                      let parsed = parseInt(e.target.value);
+                      if (isNaN(parsed)) {
+                        parsed = 0;
+                      }
+                      setApp(
+                        produce(app, (draft) => {
+                          draft.tasks[task.id].estimate = parsed * 1000;
+                        })
+                      );
+                    }}
+                  />
+                </Box>
+                <button
+                  onClick={() => {
+                    if (notesVisible.includes(task.id)) {
+                      setNotesVisible(
+                        notesVisible.filter((i) => i !== task.id)
+                      );
+                      return;
+                    }
+                    setNotesVisible([...notesVisible, task.id]);
+                  }}
+                >
+                  N
+                </button>
+                <button
+                  onClick={() =>
+                    setApp(produce(app, (draft) => closeTask(draft, task.id)))
+                  }
+                >
+                  C
+                </button>
+                <button
+                  onClick={() => {
+                    if (historyVisible.includes(task.id)) {
+                      setHistoryVisible(
+                        historyVisible.filter((i) => i !== task.id)
+                      );
+                      return;
+                    }
+                    setHistoryVisible([...historyVisible, task.id]);
+                  }}
+                >
+                  History
+                </button>
+                <button
+                  onClick={() => {
+                    setApp(
+                      produce(app, (draft) => {
+                        draft.tasks[task.id].completions.forEach(
+                          (cid) => delete app.completions[cid]
+                        );
+                        draft.tasks[task.id].sessions.forEach(
+                          (sid) => delete app.completions[sid]
+                        );
+                        delete draft.tasks[task.id];
+                      })
+                    );
+                    setNotesVisible(notesVisible.filter((i) => i !== task.id));
+                  }}
+                >
+                  X
+                </button>
+                {notesVisible.includes(task.id) && (
+                  <div>
+                    <textarea
+                      onChange={(e) =>
+                        setApp(
+                          produce(app, (draft) => {
+                            draft.tasks[task.id].notes = e.target.value;
+                          })
+                        )
+                      }
+                      value={task.notes}
+                    />
+                  </div>
+                )}
+                {historyVisible.includes(task.id) && (
+                  <div key={task.id}>
+                    <div>
+                      Total Time: {msToHHMMSS(totalTimeTask(app, task.id))}
                     </div>
-                  ))}
-              </div>
-              <div>
-                <div>Sessions</div>
-                {task.sessions
-                  .map((sid) => app.sessions[sid])
-                  .map((session) => (
-                    <div key={JSON.stringify(["session", task.id, session.id])}>
-                      {session.start.toISOString()} -{" "}
-                      {session.end?.toISOString() ?? ""} |{" "}
-                      {msToHHMMSS(elapsedTimeSession(session))}
+                    <div>
+                      <div>Completions</div>
+                      {task.completions
+                        .map((cid) => app.completions[cid])
+                        .map((completion) => (
+                          <div
+                            key={JSON.stringify([
+                              "completion",
+                              task.id,
+                              completion.id,
+                            ])}
+                          >
+                            {completion.date.toISOString()}
+                            <button
+                              onClick={() => {
+                                if (
+                                  completionsVisible.includes(completion.id)
+                                ) {
+                                  setCompletionsVisible(
+                                    completionsVisible.filter(
+                                      (a) => a !== completion.id
+                                    )
+                                  );
+                                  return;
+                                }
+                                setCompletionsVisible([
+                                  ...completionsVisible,
+                                  completion.id,
+                                ]);
+                              }}
+                            >
+                              Notes
+                            </button>
+                            {completionsVisible.includes(completion.id) && (
+                              <div>
+                                <textarea
+                                  onChange={(e) =>
+                                    setApp(
+                                      produce(app, (draft) => {
+                                        draft.completions[completion.id].notes =
+                                          e.target.value;
+                                      })
+                                    )
+                                  }
+                                  value={completion.notes}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ))}
                     </div>
-                  ))}
-              </div>
-            </div>
-          )}
-        </div>
-      ))}
+                    <div>
+                      <div>Sessions</div>
+                      {task.sessions
+                        .map((sid) => app.sessions[sid])
+                        .map((session) => (
+                          <div
+                            key={JSON.stringify([
+                              "session",
+                              task.id,
+                              session.id,
+                            ])}
+                          >
+                            {session.start.toISOString()} -{" "}
+                            {session.end?.toISOString() ?? ""} |{" "}
+                            {msToHHMMSS(elapsedTimeSession(session))}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </Box>
+            )}
+          </Box>
+        ))}
+      </List>
       <div
         style={{
           color:
