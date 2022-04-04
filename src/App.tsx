@@ -1,17 +1,21 @@
+import AddIcon from "@mui/icons-material/Add";
+import MenuIcon from "@mui/icons-material/Menu";
+import {
+    AppBar, Box, Fab, IconButton, Paper, Toolbar, Typography
+} from "@mui/material";
 import produce from "immer";
 import { useEffect, useState } from "react";
 import "./App.css";
 import {
-  AppState,
-  closeTask,
-  createTask,
-  elapsedTimeSession,
-  elapsedTimeTask,
-  isClockedInTask,
-  toggleClockTask,
-  totalTimeTask,
+    AppState,
+    closeTask,
+    createTask,
+    elapsedTimeSession,
+    elapsedTimeTask,
+    isClockedInTask,
+    toggleClockTask,
+    totalTimeTask
 } from "./AppState";
-import logo from "./logo.svg";
 
 function msToHHMMSS(milliseconds: number) {
   const seconds = Math.floor(milliseconds / 1000);
@@ -36,7 +40,35 @@ function App() {
     return () => clearInterval(interval);
   }, [app]);
   return (
-    <div className="App">
+    <Paper sx={{ minHeight: "100vh" }}>
+      <Box sx={{ flexGrow: 1 }}>
+        <AppBar position="sticky">
+          <Toolbar>
+            <IconButton
+              size="large"
+              edge="start"
+              color="inherit"
+              sx={{ mr: 1 }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+              Agenda
+            </Typography>
+          </Toolbar>
+        </AppBar>
+      </Box>
+      <Fab
+        color="primary"
+        aria-label="add"
+        sx={{
+          position: "absolute",
+          bottom: 16,
+          right: 16,
+        }}
+      >
+        <AddIcon />
+      </Fab>
       <input value={name} onChange={(e) => setName(e.target.value)} />
       <button
         onClick={() =>
@@ -258,21 +290,7 @@ function App() {
           .toISOString()
           .substring(11, 19)}
       </div>
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    </Paper>
   );
 }
 
