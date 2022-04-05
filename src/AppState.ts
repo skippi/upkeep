@@ -1,7 +1,10 @@
+import produce, { Draft } from "immer";
+
 export interface AppState {
   completions: { [id: number]: Completion };
   sessions: { [id: number]: Session };
   tasks: { [id: number]: Task };
+  touched: Date;
 }
 
 export interface Task {
@@ -26,24 +29,29 @@ export interface Completion {
   notes: string;
 }
 
-let nextId = 0;
-function generateId() {
-  return nextId++;
+export type Action =
+  | CloseTaskAction
+  | CreateTaskAction
+  | ToggleClockTaskAction
+  | DeleteTaskAction
+  | EditTaskNotesAction
+  | EditCompletionNotesAction
+  | RescheduleTaskAction
+  | EstimateTaskAction
+  | RefreshAction;
+
+interface CloseTaskAction {
+  type: "closeTask";
+  id: number;
 }
 
-export function closeTask(app: AppState, id: number) {
-  const completion = {
-    id: generateId(),
-    date: new Date(),
-    notes: "",
-  };
-  app.completions[completion.id] = completion;
-  app.tasks[id].completions.push(completion.id);
-  clockOutTask(app, id);
+interface DeleteTaskAction {
+  type: "deleteTask";
+  id: number;
 }
 
-export function createTask(
-  app: AppState,
+interface CreateTaskAction {
+  type: "createTask";
   props: {
     completions: number[];
     estimate: number;
@@ -51,17 +59,101 @@ export function createTask(
     notes: string;
     scheduleDate?: Date | null;
     sessions: number[];
-  }
-) {
-  const id = generateId();
-  const scheduleDate = props.scheduleDate ?? null;
-  app.tasks[id] = {
-    ...props,
-    id: id,
-    scheduleDate: scheduleDate,
   };
 }
 
+interface ToggleClockTaskAction {
+  type: "toggleClockTask";
+  id: number;
+}
+
+interface EditTaskNotesAction {
+  type: "editTaskNotes";
+  id: number;
+  value: string;
+}
+
+interface EditCompletionNotesAction {
+  type: "editCompletionNotes";
+  id: number;
+  value: string;
+}
+
+interface RescheduleTaskAction {
+  type: "rescheduleTask";
+  id: number;
+}
+
+interface EstimateTaskAction {
+  type: "estimateTask";
+  id: number;
+  length: number;
+}
+
+interface RefreshAction {
+  type: "refresh";
+}
+
+export const initialState: AppState = {
+  completions: {},
+  sessions: {},
+  tasks: {},
+  touched: new Date(),
+};
+
+export const appReducer = produce((draft: Draft<AppState>, action: Action) => {
+  if (action.type === "closeTask") {
+    const completion = {
+      id: generateId(),
+      date: new Date(),
+      notes: "",
+    };
+    draft.completions[completion.id] = completion;
+    draft.tasks[action.id].completions.push(completion.id);
+    clockOutTask(draft, action.id);
+  } else if (action.type === "createTask") {
+    const id = generateId();
+    const scheduleDate = action.props.scheduleDate ?? null;
+    draft.tasks[id] = {
+      ...action.props,
+      id: id,
+      scheduleDate: scheduleDate,
+    };
+  } else if (action.type === "toggleClockTask") {
+    if (isClockedInTask(draft, action.id)) {
+      return clockOutTask(draft, action.id);
+    }
+    Object.keys(draft.tasks)
+      .map(Number)
+      .forEach((tid) => clockOutTask(draft, tid));
+    const session = { id: generateId(), start: new Date(), end: null };
+    draft.tasks[action.id].sessions.push(session.id);
+    draft.sessions[session.id] = session;
+  } else if (action.type === "deleteTask") {
+    draft.tasks[action.id].completions.forEach(
+      (cid) => delete draft.completions[cid]
+    );
+    draft.tasks[action.id].sessions.forEach(
+      (sid) => delete draft.completions[sid]
+    );
+    delete draft.tasks[action.id];
+  } else if (action.type === "editTaskNotes") {
+    draft.tasks[action.id].notes = action.value;
+  } else if (action.type === "editCompletionNotes") {
+    draft.completions[action.id].notes = action.value;
+  } else if (action.type === "rescheduleTask") {
+    draft.tasks[action.id].scheduleDate = new Date();
+  } else if (action.type === "estimateTask") {
+    draft.tasks[action.id].estimate = action.length;
+  } else if (action.type === "refresh") {
+    draft.touched = new Date();
+  }
+});
+
+let nextId = 0;
+function generateId() {
+  return nextId++;
+}
 
 function closeSession(session: Session) {
   if (session.end) return;
@@ -73,18 +165,6 @@ function clockOutTask(app: AppState, id: number) {
     .slice(-1)
     .map((sid) => app.sessions[sid])
     .forEach(closeSession);
-}
-
-export function toggleClockTask(app: AppState, id: number) {
-  if (isClockedInTask(app, id)) {
-    return clockOutTask(app, id);
-  }
-  Object.keys(app.tasks)
-    .map(Number)
-    .forEach((tid) => clockOutTask(app, tid));
-  const session = { id: generateId(), start: new Date(), end: null };
-  app.tasks[id].sessions.push(session.id);
-  app.sessions[session.id] = session;
 }
 
 export function isClockedInTask(app: AppState, id: number) {

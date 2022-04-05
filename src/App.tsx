@@ -19,17 +19,14 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import produce from "immer";
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import "./App.css";
 import {
-  AppState,
-  closeTask,
-  createTask,
+  appReducer,
   elapsedTimeSession,
   elapsedTimeTask,
+  initialState,
   isClockedInTask,
-  toggleClockTask,
   totalTimeTask,
 } from "./AppState";
 
@@ -43,17 +40,13 @@ function msToHHMMSS(milliseconds: number) {
 
 function App() {
   const [name, setName] = useState<string>("");
-  const [app, setApp] = useState<AppState>({
-    completions: {},
-    sessions: {},
-    tasks: {},
-  });
+  const [app, dispatch] = useReducer(appReducer, initialState);
   const [taskInfoVisible, setTaskInfoVisible] = useState<number[]>([]);
   const [notesVisible, setNotesVisible] = useState<number[]>([]);
   const [historyVisible, setHistoryVisible] = useState<number[]>([]);
   const [completionsVisible, setCompletionsVisible] = useState<number[]>([]);
   useEffect(() => {
-    const interval = setInterval(() => setApp({ ...app }), 1000);
+    const interval = setInterval(() => dispatch({ type: "refresh" }), 1000);
     return () => clearInterval(interval);
   }, [app]);
   return (
@@ -89,17 +82,16 @@ function App() {
       <input value={name} onChange={(e) => setName(e.target.value)} />
       <button
         onClick={() =>
-          setApp(
-            produce(app, (draft) =>
-              createTask(draft, {
-                completions: [],
-                estimate: 0,
-                name: name,
-                notes: "",
-                sessions: [],
-              })
-            )
-          )
+          dispatch({
+            type: "createTask",
+            props: {
+              completions: [],
+              estimate: 0,
+              name: name,
+              notes: "",
+              sessions: [],
+            },
+          })
         }
       >
         Enter
@@ -113,9 +105,7 @@ function App() {
                 <Box>
                   <IconButton
                     onClick={() =>
-                      setApp(
-                        produce(app, (draft) => toggleClockTask(draft, task.id))
-                      )
+                      dispatch({ type: "toggleClockTask", id: task.id })
                     }
                   >
                     {!isClockedInTask(app, task.id) && <PlayArrowIcon />}
@@ -154,12 +144,8 @@ function App() {
                 <Box>
                   Scheduled: {task.scheduleDate?.toISOString()}
                   <IconButton
-                    onClick={(_) =>
-                      setApp(
-                        produce(app, (draft) => {
-                          draft.tasks[task.id].scheduleDate = new Date();
-                        })
-                      )
+                    onClick={() =>
+                      dispatch({ type: "rescheduleTask", id: task.id })
                     }
                   >
                     <CalendarMonthIcon />
@@ -188,11 +174,11 @@ function App() {
                       if (isNaN(parsed)) {
                         parsed = 0;
                       }
-                      setApp(
-                        produce(app, (draft) => {
-                          draft.tasks[task.id].estimate = parsed * 1000;
-                        })
-                      );
+                      dispatch({
+                        type: "estimateTask",
+                        id: task.id,
+                        length: parsed * 1000,
+                      });
                     }}
                   />
                 </Box>
@@ -210,9 +196,7 @@ function App() {
                   N
                 </button>
                 <button
-                  onClick={() =>
-                    setApp(produce(app, (draft) => closeTask(draft, task.id)))
-                  }
+                  onClick={() => dispatch({ type: "closeTask", id: task.id })}
                 >
                   C
                 </button>
@@ -231,17 +215,7 @@ function App() {
                 </button>
                 <button
                   onClick={() => {
-                    setApp(
-                      produce(app, (draft) => {
-                        draft.tasks[task.id].completions.forEach(
-                          (cid) => delete app.completions[cid]
-                        );
-                        draft.tasks[task.id].sessions.forEach(
-                          (sid) => delete app.completions[sid]
-                        );
-                        delete draft.tasks[task.id];
-                      })
-                    );
+                    dispatch({ type: "deleteTask", id: task.id });
                     setNotesVisible(notesVisible.filter((i) => i !== task.id));
                   }}
                 >
@@ -251,13 +225,12 @@ function App() {
                   <div>
                     <textarea
                       onChange={(e) =>
-                        setApp(
-                          produce(app, (draft) => {
-                            draft.tasks[task.id].notes = e.target.value;
-                          })
-                        )
+                        dispatch({
+                          type: "editTaskNotes",
+                          id: task.id,
+                          value: e.target.value,
+                        })
                       }
-                      value={task.notes}
                     />
                   </div>
                 )}
@@ -303,12 +276,11 @@ function App() {
                               <div>
                                 <textarea
                                   onChange={(e) =>
-                                    setApp(
-                                      produce(app, (draft) => {
-                                        draft.completions[completion.id].notes =
-                                          e.target.value;
-                                      })
-                                    )
+                                    dispatch({
+                                      type: "editCompletionNotes",
+                                      id: completion.id,
+                                      value: e.target.value,
+                                    })
                                   }
                                   value={completion.notes}
                                 />
