@@ -33,9 +33,9 @@ import {
 } from "./AppState";
 
 function msToHHMMSS(milliseconds: number) {
-  const seconds = Math.floor(milliseconds / 1000);
-  const minutes = Math.floor(milliseconds / 60 / 1000);
-  const hours = Math.floor(milliseconds / 3600 / 1000);
+  const seconds = Math.floor((milliseconds / 1000) % 60);
+  const minutes = Math.floor((milliseconds / 60 / 1000) % 60);
+  const hours = Math.floor((milliseconds / 3600 / 1000) % 24);
   const padZeroes = (v: number) => v.toString().padStart(2, "0");
   return `${padZeroes(hours)}:${padZeroes(minutes)}:${padZeroes(seconds)}`;
 }
