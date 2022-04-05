@@ -216,7 +216,7 @@ function TaskViewItem(props: {
           <Box>
             Estimate:&nbsp;
             <Input
-              value={msToHHMMSS(task.estimate)}
+              value={task.estimate / 1000}
               onChange={(e) => {
                 let parsed = parseInt(e.target.value);
                 if (isNaN(parsed)) {
