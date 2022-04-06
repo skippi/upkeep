@@ -32,12 +32,10 @@ export interface Completion {
 export type Action =
   | CloseTaskAction
   | CreateTaskAction
+  | EditTaskAction
   | ToggleClockTaskAction
   | DeleteTaskAction
-  | EditTaskNotesAction
   | EditCompletionNotesAction
-  | RescheduleTaskAction
-  | EstimateTaskAction
   | RefreshAction;
 
 interface CloseTaskAction {
@@ -62,32 +60,28 @@ interface CreateTaskAction {
   };
 }
 
+interface EditTaskAction {
+  type: "editTask";
+  id: number;
+  props: {
+    completions?: number[];
+    estimate?: number;
+    name?: string;
+    notes?: string;
+    scheduleDate?: Date | null;
+    sessions?: number[];
+  };
+}
+
 interface ToggleClockTaskAction {
   type: "toggleClockTask";
   id: number;
-}
-
-interface EditTaskNotesAction {
-  type: "editTaskNotes";
-  id: number;
-  value: string;
 }
 
 interface EditCompletionNotesAction {
   type: "editCompletionNotes";
   id: number;
   value: string;
-}
-
-interface RescheduleTaskAction {
-  type: "rescheduleTask";
-  id: number;
-}
-
-interface EstimateTaskAction {
-  type: "estimateTask";
-  id: number;
-  length: number;
 }
 
 interface RefreshAction {
@@ -119,6 +113,11 @@ export const appReducer = produce((draft: Draft<AppState>, action: Action) => {
       id: id,
       scheduleDate: scheduleDate,
     };
+  } else if (action.type === "editTask") {
+    draft.tasks[action.id] = {
+      ...draft.tasks[action.id],
+      ...action.props,
+    };
   } else if (action.type === "toggleClockTask") {
     if (isClockedInTask(draft, action.id)) {
       return clockOutTask(draft, action.id);
@@ -137,14 +136,8 @@ export const appReducer = produce((draft: Draft<AppState>, action: Action) => {
       (sid) => delete draft.completions[sid]
     );
     delete draft.tasks[action.id];
-  } else if (action.type === "editTaskNotes") {
-    draft.tasks[action.id].notes = action.value;
   } else if (action.type === "editCompletionNotes") {
     draft.completions[action.id].notes = action.value;
-  } else if (action.type === "rescheduleTask") {
-    draft.tasks[action.id].scheduleDate = new Date();
-  } else if (action.type === "estimateTask") {
-    draft.tasks[action.id].estimate = action.length;
   } else if (action.type === "refresh") {
     draft.touched = new Date();
   }
