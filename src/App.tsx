@@ -2,29 +2,37 @@ import AddIcon from "@mui/icons-material/Add";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import CloseIcon from "@mui/icons-material/Close";
 import MenuIcon from "@mui/icons-material/Menu";
+import NotesIcon from "@mui/icons-material/Notes";
 import PauseIcon from "@mui/icons-material/Pause";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import ScheduleIcon from "@mui/icons-material/Schedule";
+import TimerIcon from "@mui/icons-material/Timer";
+import { MobileDateTimePicker } from "@mui/lab";
 import {
   AppBar,
   Box,
+  Button,
   Divider,
   Fab,
+  Icon,
   IconButton,
-  Input,
   List,
   ListItem,
   ListItemText,
   Paper,
+  TextField,
   Toolbar,
   Typography,
 } from "@mui/material";
 import { useEffect, useReducer, useState } from "react";
+import { Route, Routes, useNavigate } from "react-router-dom";
 import "./App.css";
 import {
   Action,
-  AppState,
   appReducer,
+  AppState,
   elapsedTimeSession,
   elapsedTimeTask,
   initialState,
@@ -40,15 +48,15 @@ function msToHHMMSS(milliseconds: number) {
   return `${padZeroes(hours)}:${padZeroes(minutes)}:${padZeroes(seconds)}`;
 }
 
-function App() {
-  const [name, setName] = useState<string>("");
-  const [app, dispatch] = useReducer(appReducer, initialState);
+function Agenda(props: { app: AppState; dispatch: (action: Action) => void }) {
+  const navigate = useNavigate();
+  const { app, dispatch } = props;
   useEffect(() => {
     const interval = setInterval(() => dispatch({ type: "refresh" }), 1000);
     return () => clearInterval(interval);
-  }, [app]);
+  }, [app, dispatch]);
   return (
-    <Paper sx={{ minHeight: "100vh" }}>
+    <Box>
       <Box sx={{ flexGrow: 1 }}>
         <AppBar position="sticky">
           <Toolbar>
@@ -74,26 +82,10 @@ function App() {
           bottom: 16,
           right: 16,
         }}
+        onClick={() => navigate("/task/create")}
       >
         <AddIcon />
       </Fab>
-      <input value={name} onChange={(e) => setName(e.target.value)} />
-      <button
-        onClick={() =>
-          dispatch({
-            type: "createTask",
-            props: {
-              completions: [],
-              estimate: 0,
-              name: name,
-              notes: "",
-              sessions: [],
-            },
-          })
-        }
-      >
-        Enter
-      </button>
       <List>
         {Object.values(app.tasks).map((task, i) => (
           <Box key={task.id}>
@@ -121,6 +113,119 @@ function App() {
           .toISOString()
           .substring(11, 19)}
       </div>
+    </Box>
+  );
+}
+
+function CreateTask(props: { dispatch: (action: Action) => void }) {
+  const [name, setName] = useState<string>("");
+  const [notes, setNotes] = useState<string>("");
+  const [estimate, setEstimate] = useState<number | null>(null);
+  const [scheduleDate, setScheduleDate] = useState<Date | null>(null);
+  const { dispatch } = props;
+  const navigate = useNavigate();
+  return (
+    <Box>
+      <AppBar position="sticky">
+        <Toolbar>
+          <IconButton
+            size="large"
+            edge="start"
+            color="inherit"
+            sx={{ mr: 1 }}
+            onClick={() => navigate("/")}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Box sx={{ flexGrow: 1 }} />
+          <Button
+            onClick={() => {
+              dispatch({
+                type: "createTask",
+                props: {
+                  completions: [],
+                  estimate: estimate ?? 0,
+                  name: name,
+                  notes: "",
+                  scheduleDate: scheduleDate,
+                  sessions: [],
+                },
+              });
+              navigate("/");
+            }}
+          >
+            Save
+          </Button>
+        </Toolbar>
+      </AppBar>
+      <List>
+        <ListItem>
+          <TextField
+            placeholder="Name"
+            value={name}
+            sx={{ flexGrow: 1 }}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </ListItem>
+        <Divider component="li" />
+        <ListItem>
+          <Icon sx={{ paddingRight: "16px" }}>
+            <NotesIcon />
+          </Icon>
+          <TextField
+            multiline
+            placeholder="Notes"
+            value={notes}
+            sx={{ flexGrow: 1 }}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+        </ListItem>
+        <ListItem>
+          <Icon sx={{ paddingRight: "16px" }}>
+            <ScheduleIcon />
+          </Icon>
+          <MobileDateTimePicker
+            clearable={true}
+            value={scheduleDate}
+            onChange={setScheduleDate}
+            renderInput={(params) => (
+              <TextField {...params} sx={{ flexGrow: 1 }} placeholder="Date" />
+            )}
+          />
+        </ListItem>
+        <ListItem>
+          <Icon sx={{ paddingRight: "16px" }}>
+            <TimerIcon />
+          </Icon>
+          <TextField
+            placeholder="Estimate"
+            value={(estimate ?? 0) / 1000}
+            sx={{ flexGrow: 1 }}
+            onChange={(e) => {
+              let parsed = parseInt(e.target.value);
+              if (isNaN(parsed)) {
+                parsed = 0;
+              }
+              setEstimate(parsed * 1000);
+            }}
+          />
+        </ListItem>
+      </List>
+    </Box>
+  );
+}
+
+function App() {
+  const [app, dispatch] = useReducer(appReducer, initialState);
+  return (
+    <Paper sx={{ minHeight: "100vh" }}>
+      <Routes>
+        <Route path="/" element={<Agenda app={app} dispatch={dispatch} />} />
+        <Route
+          path="/task/create"
+          element={<CreateTask dispatch={dispatch} />}
+        />
+      </Routes>
     </Paper>
   );
 }
@@ -213,23 +318,7 @@ function TaskViewItem(props: {
               {msToHHMMSS(elapsedTimeTask(app, task.id))}
             </Typography>
           </Box>
-          <Box>
-            Estimate:&nbsp;
-            <Input
-              value={task.estimate / 1000}
-              onChange={(e) => {
-                let parsed = parseInt(e.target.value);
-                if (isNaN(parsed)) {
-                  parsed = 0;
-                }
-                dispatch({
-                  type: "estimateTask",
-                  id: task.id,
-                  length: parsed * 1000,
-                });
-              }}
-            />
-          </Box>
+          <Box>Estimate:&nbsp;{task.estimate / 1000}</Box>
           <button onClick={() => setNotesVisible(!notesVisible)}>N</button>
           <button onClick={() => dispatch({ type: "closeTask", id: task.id })}>
             C

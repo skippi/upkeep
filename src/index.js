@@ -3,6 +3,9 @@ import ReactDOM from "react-dom";
 import "./index.css";
 import App from "./App";
 import { ThemeProvider } from "@emotion/react";
+import { BrowserRouter } from "react-router-dom";
+import { LocalizationProvider } from "@mui/lab";
+import AdapterMoment from '@mui/lab/AdapterMoment'
 import { createTheme } from "@mui/material/styles";
 import reportWebVitals from "./reportWebVitals";
 
@@ -15,7 +18,11 @@ ReactDOM.render(
         },
       })}
     >
-        <App />
+      <LocalizationProvider dateAdapter={AdapterMoment}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </LocalizationProvider>
     </ThemeProvider>
   </React.StrictMode>,
   document.getElementById("root")
