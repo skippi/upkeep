@@ -3,31 +3,42 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
+import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import MenuIcon from "@mui/icons-material/Menu";
 import NotesIcon from "@mui/icons-material/Notes";
 import PauseIcon from "@mui/icons-material/Pause";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import TimerIcon from "@mui/icons-material/Timer";
-import { MobileDateTimePicker } from "@mui/lab";
+import ViewAgendaOutlinedIcon from "@mui/icons-material/ViewAgendaOutlined";
+import { DatePicker, MobileDateTimePicker } from "@mui/lab";
 import {
   AppBar,
   Box,
   Button,
   Divider,
+  Drawer,
   Fab,
   Icon,
   IconButton,
   List,
   ListItem,
+  ListItemIcon,
   ListItemText,
   Paper,
   TextField,
   Toolbar,
   Typography,
 } from "@mui/material";
+import moment from "moment";
 import { useEffect, useReducer, useState } from "react";
-import { Route, Routes, useNavigate, useParams } from "react-router-dom";
+import {
+  Route,
+  Routes,
+  useMatch,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 import "./App.css";
 import {
   Action,
@@ -49,7 +60,80 @@ function msToHHMMSS(milliseconds: number) {
   return `${padZeroes(hours)}:${padZeroes(minutes)}:${padZeroes(seconds)}`;
 }
 
-function Agenda(props: { app: AppState; dispatch: (action: Action) => void }) {
+function MainNavBar(props: { title?: string; titleNode?: React.ReactNode }) {
+  const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
+  const { title, titleNode } = props;
+  const navigate = useNavigate();
+  return (
+    <Box>
+      <AppBar position="sticky">
+        <Toolbar>
+          <IconButton
+            size="large"
+            edge="start"
+            color="inherit"
+            sx={{ mr: 1 }}
+            onClick={() => setDrawerOpen(true)}
+          >
+            <MenuIcon />
+          </IconButton>
+          {title && (
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+              {title}
+            </Typography>
+          )}
+          {titleNode}
+        </Toolbar>
+      </AppBar>
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(!drawerOpen)}
+      >
+        <Box
+          sx={{ width: 250 }}
+          role="presentation"
+          onClick={() => setDrawerOpen(false)}
+          onKeyDown={() => setDrawerOpen(false)}
+        >
+          <Toolbar>
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+              time-app
+            </Typography>
+          </Toolbar>
+          <Divider />
+          <List>
+            <ListItem
+              button
+              onClick={() => navigate("/")}
+              selected={!!useMatch("/")}
+            >
+              <ListItemIcon>
+                <ViewAgendaOutlinedIcon />
+              </ListItemIcon>
+              <ListItemText>Agenda</ListItemText>
+            </ListItem>
+            <ListItem
+              button
+              onClick={() => navigate("/tasks")}
+              selected={!!useMatch("/tasks")}
+            >
+              <ListItemIcon>
+                <FormatListBulletedIcon />
+              </ListItemIcon>
+              <ListItemText>Tasks</ListItemText>
+            </ListItem>
+          </List>
+        </Box>
+      </Drawer>
+    </Box>
+  );
+}
+
+function TaskList(props: {
+  app: AppState;
+  dispatch: (action: Action) => void;
+}) {
   const navigate = useNavigate();
   const { app, dispatch } = props;
   useEffect(() => {
@@ -58,23 +142,7 @@ function Agenda(props: { app: AppState; dispatch: (action: Action) => void }) {
   }, [app, dispatch]);
   return (
     <Box>
-      <Box sx={{ flexGrow: 1 }}>
-        <AppBar position="sticky">
-          <Toolbar>
-            <IconButton
-              size="large"
-              edge="start"
-              color="inherit"
-              sx={{ mr: 1 }}
-            >
-              <MenuIcon />
-            </IconButton>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              Agenda
-            </Typography>
-          </Toolbar>
-        </AppBar>
-      </Box>
+      <MainNavBar title="Tasks" />
       <Fab
         color="primary"
         aria-label="add"
@@ -114,6 +182,64 @@ function Agenda(props: { app: AppState; dispatch: (action: Action) => void }) {
           .toISOString()
           .substring(11, 19)}
       </div>
+    </Box>
+  );
+}
+
+function Agenda(props: { app: AppState; dispatch: (action: Action) => void }) {
+  const [date, setDate] = useState<Date>(new Date());
+  const [openDate, setOpenDate] = useState<boolean>(false);
+  const navigate = useNavigate();
+  const { app, dispatch } = props;
+  return (
+    <Box>
+      <MainNavBar
+        titleNode={
+          <Box>
+            <Typography variant="h6" component="div">
+              {moment(date).format("MMM DD")}
+              <IconButton
+                edge="start"
+                sx={{ padding: 0, marginLeft: 0 }}
+                onClick={() => setOpenDate(!openDate)}
+              >
+                <ArrowDropDownIcon />
+              </IconButton>
+              <DatePicker
+                value={date}
+                open={openDate}
+                onChange={(newDate) => setDate(newDate ?? new Date())}
+                onClose={() => setOpenDate(false)}
+                renderInput={() => <div></div>}
+              />
+            </Typography>
+          </Box>
+        }
+      />
+      <List>
+        {Object.values(app.tasks)
+          .filter((task) =>
+            moment(task.scheduleDate).isSame(moment(date), "date")
+          )
+          .map((task, i) => (
+            <Box key={task.id}>
+              {i !== 0 && <Divider component="li" />}
+              <TaskViewItem id={task.id} app={app} dispatch={dispatch} />
+            </Box>
+          ))}
+      </List>
+      <Fab
+        color="primary"
+        aria-label="add"
+        sx={{
+          position: "absolute",
+          bottom: 16,
+          right: 16,
+        }}
+        onClick={() => navigate("/tasks/create")}
+      >
+        <AddIcon />
+      </Fab>
     </Box>
   );
 }
@@ -428,6 +554,10 @@ function App() {
     <Paper sx={{ minHeight: "100vh" }}>
       <Routes>
         <Route path="/" element={<Agenda app={app} dispatch={dispatch} />} />
+        <Route
+          path="/tasks"
+          element={<TaskList app={app} dispatch={dispatch} />}
+        />
         <Route
           path="/tasks/create"
           element={<CreateTask dispatch={dispatch} />}
