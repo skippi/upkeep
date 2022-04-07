@@ -2,6 +2,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import CloseIcon from "@mui/icons-material/Close";
+import EditIcon from "@mui/icons-material/Edit";
 import MenuIcon from "@mui/icons-material/Menu";
 import NotesIcon from "@mui/icons-material/Notes";
 import PauseIcon from "@mui/icons-material/Pause";
@@ -36,6 +37,7 @@ import {
   elapsedTimeTask,
   initialState,
   isClockedInTask,
+  Task,
   totalTimeTask,
 } from "./AppState";
 
@@ -81,7 +83,7 @@ function Agenda(props: { app: AppState; dispatch: (action: Action) => void }) {
           bottom: 16,
           right: 16,
         }}
-        onClick={() => navigate("/task/create")}
+        onClick={() => navigate("/tasks/create")}
       >
         <AddIcon />
       </Fab>
@@ -132,7 +134,7 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
             edge="start"
             color="inherit"
             sx={{ mr: 1 }}
-            onClick={() => navigate("/")}
+            onClick={() => navigate(-1)}
           >
             <CloseIcon />
           </IconButton>
@@ -150,7 +152,7 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
                   sessions: [],
                 },
               });
-              navigate("/");
+              navigate(-1);
             }}
           >
             Save
@@ -214,6 +216,86 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
   );
 }
 
+function ViewTask(props: { app: AppState }) {
+  const [error, setError] = useState<Boolean>(false);
+  const [task, setTask] = useState<Task | null>(null);
+  const { id } = useParams<"id">();
+  const { app } = props;
+  useEffect(() => {
+    try {
+      if (!id) {
+        throw new Error("missing id parameter");
+      }
+      const parsed = parseInt(id, 10);
+      if (isNaN(parsed)) {
+        throw new Error("id is not a number");
+      }
+      setTask(app.tasks[parseInt(id, 10)]);
+      setError(false);
+    } catch {
+      setError(true);
+    }
+  }, [id, app.tasks]);
+  const navigate = useNavigate();
+  if (error) {
+    return <Box></Box>;
+  }
+  return (
+    <Box>
+      <AppBar position="sticky">
+        <Toolbar>
+          <IconButton
+            size="large"
+            edge="start"
+            color="inherit"
+            sx={{ mr: 1 }}
+            onClick={() => navigate(-1)}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Box sx={{ flexGrow: 1 }} />
+          <IconButton
+            size="large"
+            edge="end"
+            color="inherit"
+            onClick={() => navigate(`/tasks/${id}/edit`)}
+          >
+            <EditIcon />
+          </IconButton>
+        </Toolbar>
+      </AppBar>
+      <List>
+        <ListItem>
+          <Typography sx={{ flexGrow: 1 }}>{task?.name}</Typography>
+        </ListItem>
+        <Divider component="li" />
+        <ListItem>
+          <Icon sx={{ paddingRight: "16px" }}>
+            <NotesIcon />
+          </Icon>
+          <Typography sx={{ flexGrow: 1 }}>{task?.notes}</Typography>
+        </ListItem>
+        <ListItem>
+          <Icon sx={{ paddingRight: "16px" }}>
+            <ScheduleIcon />
+          </Icon>
+          <Typography sx={{ flexGrow: 1 }}>
+            {task?.scheduleDate?.toISOString()}
+          </Typography>
+        </ListItem>
+        <ListItem>
+          <Icon sx={{ paddingRight: "16px" }}>
+            <TimerIcon />
+          </Icon>
+          <Typography sx={{ flexGrow: 1 }}>
+            {(task?.estimate ?? 0) / 1000}
+          </Typography>
+        </ListItem>
+      </List>
+    </Box>
+  );
+}
+
 function EditTask(props: {
   app: AppState;
   dispatch: (action: Action) => void;
@@ -257,7 +339,7 @@ function EditTask(props: {
             edge="start"
             color="inherit"
             sx={{ mr: 1 }}
-            onClick={() => navigate("..")}
+            onClick={() => navigate(-1)}
           >
             <CloseIcon />
           </IconButton>
@@ -276,7 +358,7 @@ function EditTask(props: {
                   sessions: [],
                 },
               });
-              navigate("..");
+              navigate(-1);
             }}
           >
             Save
@@ -347,11 +429,12 @@ function App() {
       <Routes>
         <Route path="/" element={<Agenda app={app} dispatch={dispatch} />} />
         <Route
-          path="/task/create"
+          path="/tasks/create"
           element={<CreateTask dispatch={dispatch} />}
         />
+        <Route path="/tasks/:id/" element={<ViewTask app={app} />} />
         <Route
-          path="/task/edit/:id"
+          path="/tasks/:id/edit"
           element={<EditTask app={app} dispatch={dispatch} />}
         />
       </Routes>
@@ -404,6 +487,7 @@ function TaskViewItem(props: {
   return (
     <Box>
       <ListItem
+        onClick={() => navigate(`/tasks/${task.id}`)}
         secondaryAction={
           <Box>
             <IconButton
@@ -449,9 +533,6 @@ function TaskViewItem(props: {
           </button>
           <button onClick={() => dispatch({ type: "deleteTask", id: task.id })}>
             X
-          </button>
-          <button onClick={() => navigate(`/task/edit/${task.id}`)}>
-            Edit
           </button>
           <div>Notes:&nbsp;{task.notes}</div>
           {historyVisible && (
