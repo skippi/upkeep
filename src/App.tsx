@@ -1,6 +1,7 @@
 import AddIcon from "@mui/icons-material/Add";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
+import AssistantOutlinedIcon from "@mui/icons-material/AssistantOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
@@ -14,6 +15,7 @@ import ViewAgendaOutlinedIcon from "@mui/icons-material/ViewAgendaOutlined";
 import { DatePicker, MobileDateTimePicker } from "@mui/lab";
 import {
   AppBar,
+  Badge,
   Box,
   Button,
   Divider,
@@ -26,12 +28,13 @@ import {
   ListItemIcon,
   ListItemText,
   Paper,
+  Popover,
   TextField,
   Toolbar,
   Typography,
 } from "@mui/material";
 import moment from "moment";
-import { useEffect, useReducer, useState } from "react";
+import React, { useEffect, useReducer, useState } from "react";
 import {
   Route,
   Routes,
@@ -163,25 +166,6 @@ function TaskList(props: {
           </Box>
         ))}
       </List>
-      <div
-        style={{
-          color:
-            Object.values(app.tasks)
-              .map((t) => t.estimate)
-              .reduce((a, b) => a + b, 0) >
-            16 * 3600 * 1000
-              ? "red"
-              : undefined,
-        }}
-      >
-        {new Date(
-          Object.values(app.tasks)
-            .map((t) => t.estimate)
-            .reduce((a, b) => a + b, 0)
-        )
-          .toISOString()
-          .substring(11, 19)}
-      </div>
     </Box>
   );
 }
@@ -189,14 +173,33 @@ function TaskList(props: {
 function Agenda(props: { app: AppState; dispatch: (action: Action) => void }) {
   const [date, setDate] = useState<Date>(new Date());
   const [openDate, setOpenDate] = useState<boolean>(false);
+  const [assistItems, setAssistItems] = useState<string[]>([]);
+  const [assistAnchor, setAssistAnchor] = useState<HTMLButtonElement | null>(
+    null
+  );
   const navigate = useNavigate();
   const { app, dispatch } = props;
+  useEffect(() => {
+    const items = [];
+    const agendaTotalTime = Object.values(app.tasks)
+      .filter((task) => moment(task.scheduleDate).isSame(moment(date), "date"))
+      .map((task) => task.estimate)
+      .reduce((a, b) => a + b, 0);
+    if (agendaTotalTime > 16 * 3600 * 1000) {
+      items.push(
+        `Agenda estimation exceeds 24 hours. (${moment
+          .duration(agendaTotalTime)
+          .humanize()})`
+      );
+    }
+    setAssistItems(items);
+  }, [date, app.tasks]);
   return (
-    <Box>
+    <React.Fragment>
       <MainNavBar
         titleNode={
-          <Box>
-            <Typography variant="h6" component="div">
+          <React.Fragment>
+            <Typography sx={{ flexGrow: 1 }} variant="h6" component="span">
               {moment(date).format("MMM DD")}
               <IconButton
                 edge="start"
@@ -213,7 +216,39 @@ function Agenda(props: { app: AppState; dispatch: (action: Action) => void }) {
                 renderInput={() => <div></div>}
               />
             </Typography>
-          </Box>
+            <IconButton
+              color="inherit"
+              onClick={(e) => {
+                if (assistItems.length === 0) return;
+                setAssistAnchor(e.currentTarget);
+              }}
+            >
+              <Badge color="secondary" badgeContent={assistItems.length}>
+                <AssistantOutlinedIcon />
+              </Badge>
+            </IconButton>
+            <Popover
+              open={!!assistAnchor}
+              anchorEl={assistAnchor}
+              onClose={() => setAssistAnchor(null)}
+              anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "right",
+              }}
+              transformOrigin={{
+                vertical: "top",
+                horizontal: "right",
+              }}
+            >
+              <List>
+                <ListItem>
+                  {assistItems.map((item, i) => (
+                    <ListItemText key={i}>{item}</ListItemText>
+                  ))}
+                </ListItem>
+              </List>
+            </Popover>
+          </React.Fragment>
         }
       />
       <List>
@@ -240,7 +275,7 @@ function Agenda(props: { app: AppState; dispatch: (action: Action) => void }) {
       >
         <AddIcon />
       </Fab>
-    </Box>
+    </React.Fragment>
   );
 }
 

@@ -190,3 +190,24 @@ export function totalTimeTask(app: AppState, id: number) {
     .map((sid) => app.sessions[sid])
     .reduce((total, session) => total + elapsedTimeSession(session), 0);
 }
+
+export function averageTimeMATask(app: AppState, id: number) {
+  const dateDividers = app.tasks[id].completions
+    .map((cid) => app.completions[cid])
+    .slice(-5)
+    .map((c) => c.date);
+  if (dateDividers.length === 0) return 0;
+  dateDividers.unshift(new Date(0));
+  dateDividers.push(new Date());
+  let average = 0;
+  for (var i = 0; i < dateDividers.length - 1; ++i) {
+    const first = dateDividers[i];
+    const last = dateDividers[i + 1];
+    const timeTaken = app.tasks[id].sessions
+      .map((sid) => app.sessions[sid])
+      .filter((session) => first <= session.start && session.start < last)
+      .reduce((total, session) => total + elapsedTimeSession(session), 0);
+    average += timeTaken / (dateDividers.length - 2);
+  }
+  return average;
+}
