@@ -436,29 +436,36 @@ function ViewTask(props: { app: AppState }) {
           <Typography sx={{ flexGrow: 1 }}>{task?.name}</Typography>
         </ListItem>
         <Divider component="li" />
-        <ListItem>
-          <Icon sx={{ paddingRight: "16px" }}>
-            <NotesIcon />
-          </Icon>
-          <Typography sx={{ flexGrow: 1 }}>{task?.notes}</Typography>
-        </ListItem>
-        <ListItem>
-          <Icon sx={{ paddingRight: "16px" }}>
-            <ScheduleIcon />
-          </Icon>
-          <Typography sx={{ flexGrow: 1 }}>
-            {task?.scheduleDate?.toISOString()}
-          </Typography>
-        </ListItem>
-        <ListItem>
-          <ListItemIcon>
-            <TimerIcon />
-          </ListItemIcon>
-          <ListItemText
-            primary="Estimate"
-            secondary={task && msToHHMMSS(task!.estimate)}
-          />
-        </ListItem>
+        {task && task.notes && (
+          <ListItem>
+            <ListItemIcon>
+              <NotesIcon />
+            </ListItemIcon>
+            <ListItemText primary={task.notes} sx={{ flexGrow: 1 }} />
+          </ListItem>
+        )}
+        {task && task.scheduleDate && (
+          <ListItem>
+            <ListItemIcon>
+              <ScheduleIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary={task.scheduleDate?.toISOString()}
+              sx={{ flexGrow: 1 }}
+            />
+          </ListItem>
+        )}
+        {task && task.estimate !== null && (
+          <ListItem>
+            <ListItemIcon>
+              <TimerIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary="Estimate"
+              secondary={task && msToHHMMSS(task.estimate)}
+            />
+          </ListItem>
+        )}
         <ListItem>
           <ListItemIcon>
             <HistoryIcon />
