@@ -39,6 +39,7 @@ import React, { useEffect, useReducer, useState } from "react";
 import {
   Route,
   Routes,
+  useLocation,
   useMatch,
   useNavigate,
   useParams,
@@ -606,8 +607,38 @@ function EditTask(props: {
   );
 }
 
+function loadLocalState(): AppState | null {
+  const data = localStorage.getItem("app")
+  if (!data) return null;
+  try {
+    const app = JSON.parse(data) as AppState
+    app.touched = new Date(app.touched)
+    for (const task of Object.values(app.tasks)) {
+      if (task.scheduleDate != null) {
+        task.scheduleDate = new Date(task.scheduleDate)
+      }
+    }
+    for (const session of Object.values(app.sessions)) {
+      session.start = new Date(session.start)
+      if (session.end != null) {
+        session.end = new Date(session.end)
+      }
+    }
+    for (const comp of Object.values(app.completions)) {
+      comp.date = new Date(comp.date)
+    }
+    return app
+  } catch (SyntaxError) {
+    return null;
+  }
+}
+
 function App() {
-  const [app, dispatch] = useReducer(appReducer, initialState);
+  const [app, dispatch] = useReducer(appReducer, loadLocalState() ?? initialState);
+  const location = useLocation();
+  useEffect(() => {
+    localStorage.setItem("app", JSON.stringify(app))
+  }, [app, location])
   return (
     <Paper sx={{ minHeight: "100vh" }}>
       <Routes>
