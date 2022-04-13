@@ -5,6 +5,7 @@ import AssistantOutlinedIcon from "@mui/icons-material/AssistantOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
+import HistoryIcon from "@mui/icons-material/History";
 import MenuIcon from "@mui/icons-material/Menu";
 import NotesIcon from "@mui/icons-material/Notes";
 import PauseIcon from "@mui/icons-material/Pause";
@@ -47,6 +48,7 @@ import {
   Action,
   appReducer,
   AppState,
+  averageTimeMATask,
   elapsedTimeSession,
   elapsedTimeTask,
   initialState,
@@ -194,6 +196,10 @@ function Agenda(props: { app: AppState; dispatch: (action: Action) => void }) {
     }
     setAssistItems(items);
   }, [date, app.tasks]);
+  useEffect(() => {
+    const interval = setInterval(() => dispatch({ type: "refresh" }), 1000);
+    return () => clearInterval(interval);
+  }, [app, dispatch]);
   return (
     <React.Fragment>
       <MainNavBar
@@ -445,12 +451,22 @@ function ViewTask(props: { app: AppState }) {
           </Typography>
         </ListItem>
         <ListItem>
-          <Icon sx={{ paddingRight: "16px" }}>
+          <ListItemIcon>
             <TimerIcon />
-          </Icon>
-          <Typography sx={{ flexGrow: 1 }}>
-            {(task?.estimate ?? 0) / 1000}
-          </Typography>
+          </ListItemIcon>
+          <ListItemText
+            primary="Estimate"
+            secondary={task && msToHHMMSS(task!.estimate)}
+          />
+        </ListItem>
+        <ListItem>
+          <ListItemIcon>
+            <HistoryIcon />
+          </ListItemIcon>
+          <ListItemText
+            primary="Average Length"
+            secondary={task && `${msToHHMMSS(averageTimeMATask(app, task.id))}`}
+          />
         </ListItem>
       </List>
     </Box>
@@ -652,7 +668,6 @@ function TaskViewItem(props: {
   return (
     <Box>
       <ListItem
-        onClick={() => navigate(`/tasks/${task.id}`)}
         secondaryAction={
           <Box>
             <IconButton
@@ -668,6 +683,7 @@ function TaskViewItem(props: {
         }
       >
         <ListItemText
+          onClick={() => navigate(`/tasks/${task.id}`)}
           sx={{
             color: clockedIn ? "green" : undefined,
           }}
