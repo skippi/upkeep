@@ -700,7 +700,6 @@ function TaskViewItem(props: {
       </ListItem>
       {infoVisible && (
         <Box component="li">
-          <Box>Scheduled: {task.scheduleDate?.toISOString()}</Box>
           <Box>
             Time Taken:&nbsp;
             <Typography
@@ -712,7 +711,6 @@ function TaskViewItem(props: {
               {msToHHMMSS(elapsedTimeTask(app, task.id))}
             </Typography>
           </Box>
-          <Box>Estimate:&nbsp;{task.estimate / 1000}</Box>
           <button onClick={() => dispatch({ type: "closeTask", id: task.id })}>
             C
           </button>
@@ -722,7 +720,6 @@ function TaskViewItem(props: {
           <button onClick={() => dispatch({ type: "deleteTask", id: task.id })}>
             X
           </button>
-          <div>Notes:&nbsp;{task.notes}</div>
           {historyVisible && (
             <div key={task.id}>
               <div>Total Time: {msToHHMMSS(totalTimeTask(app, task.id))}</div>
