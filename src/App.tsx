@@ -314,7 +314,7 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
                   completions: [],
                   estimate: estimate ?? 0,
                   name: name,
-                  notes: "",
+                  notes: notes,
                   scheduleDate: scheduleDate,
                   sessions: [],
                 },
