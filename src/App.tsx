@@ -383,7 +383,7 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
   );
 }
 
-function ViewTask(props: { app: AppState }) {
+function TaskDetailPage(props: { app: AppState }) {
   const [error, setError] = useState<Boolean>(false);
   const [task, setTask] = useState<Task | null>(null);
   const { id } = useParams<"id">();
@@ -620,7 +620,7 @@ function App() {
           path="/tasks/create"
           element={<CreateTask dispatch={dispatch} />}
         />
-        <Route path="/tasks/:id/" element={<ViewTask app={app} />} />
+        <Route path="/tasks/:id/" element={<TaskDetailPage app={app} />} />
         <Route
           path="/tasks/:id/edit"
           element={<EditTask app={app} dispatch={dispatch} />}
