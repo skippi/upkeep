@@ -143,9 +143,8 @@ export const appReducer = produce((draft: Draft<AppState>, action: Action) => {
   }
 });
 
-let nextId = 0;
 function generateId() {
-  return nextId++;
+  return new Date().valueOf();
 }
 
 function closeSession(session: Session) {
