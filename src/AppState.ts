@@ -1,4 +1,5 @@
 import produce, { Draft } from "immer";
+import moment from "moment";
 
 export interface AppState {
   completions: { [id: number]: Completion };
@@ -106,7 +107,14 @@ export const appReducer = produce((draft: Draft<AppState>, action: Action) => {
       notes: "",
     };
     draft.completions[completion.id] = completion;
-    draft.tasks[action.id].completions.push(completion.id);
+    const task = draft.tasks[action.id];
+    task.completions.push(completion.id);
+    if (task.repeat) {
+      task.scheduleDate = moment(task.scheduleDate ?? new Date())
+        .startOf("day")
+        .add(task.repeat)
+        .toDate();
+    }
     clockOutTask(draft, action.id);
   } else if (action.type === "createTask") {
     const id = generateId();
