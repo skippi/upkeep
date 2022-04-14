@@ -12,6 +12,7 @@ import PauseIcon from "@mui/icons-material/Pause";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import RepeatIcon from "@mui/icons-material/Repeat";
 import ScheduleIcon from "@mui/icons-material/Schedule";
+import TimelineIcon from "@mui/icons-material/Timeline";
 import TimerIcon from "@mui/icons-material/Timer";
 import ViewAgendaOutlinedIcon from "@mui/icons-material/ViewAgendaOutlined";
 import { DatePicker, MobileDateTimePicker } from "@mui/lab";
@@ -57,6 +58,7 @@ import {
   elapsedTimeTask,
   initialState,
   isClockedInTask,
+  Session,
   Task,
   totalTimeTask,
 } from "./AppState";
@@ -132,6 +134,16 @@ function MainNavBar(props: { title?: string; titleNode?: React.ReactNode }) {
               </ListItemIcon>
               <ListItemText>Tasks</ListItemText>
             </ListItem>
+            <ListItem
+              button
+              onClick={() => navigate("/timeline")}
+              selected={!!useMatch("/timeline")}
+            >
+              <ListItemIcon>
+                <TimelineIcon />
+              </ListItemIcon>
+              <ListItemText>Timeline</ListItemText>
+            </ListItem>
           </List>
         </Box>
       </Drawer>
@@ -173,6 +185,58 @@ function TaskList(props: {
         ))}
       </List>
     </Box>
+  );
+}
+
+function TimelinePage(props: { app: AppState }) {
+  const [date, setDate] = useState<Date>(new Date());
+  const [openDate, setOpenDate] = useState<boolean>(false);
+  const { app } = props;
+  const viewSessions = Object.values(app.tasks)
+    .flatMap((task) =>
+      task.sessions.map((sid): [Session, Task] => [app.sessions[sid], task])
+    )
+    .filter(
+      ([s, _]) =>
+        moment(s.start).isSameOrAfter(date, "day") &&
+        moment(s.start).isBefore(moment(date).add(1, "days"), "day")
+    );
+  viewSessions.sort(
+    ([a, _aTask], [b, _bTask]) => a.start.getTime() - b.start.getTime()
+  );
+  return (
+    <React.Fragment>
+      <MainNavBar
+        titleNode={
+          <React.Fragment>
+            <Typography sx={{ flexGrow: 1 }} variant="h6" component="span">
+              {moment(date).format("MMM DD")}
+              <IconButton
+                edge="start"
+                sx={{ padding: 0, marginLeft: 0 }}
+                onClick={() => setOpenDate(!openDate)}
+              >
+                <ArrowDropDownIcon />
+              </IconButton>
+              <DatePicker
+                value={date}
+                open={openDate}
+                onChange={(newDate) => setDate(newDate ?? new Date())}
+                onClose={() => setOpenDate(false)}
+                renderInput={() => <div></div>}
+              />
+            </Typography>
+          </React.Fragment>
+        }
+      />
+      {Object.values(viewSessions).map(([session, task]) => (
+        <Box key={JSON.stringify(["session", task.id, session.id])}>
+          {moment(session.start).format("HH:mm")}-
+          {moment(session.end ?? new Date()).format("HH:mm")} (
+          {msToHHMMSS(elapsedTimeSession(session))}) {task.name}
+        </Box>
+      ))}
+    </React.Fragment>
   );
 }
 
@@ -726,6 +790,7 @@ function App() {
     <Paper sx={{ minHeight: "100vh" }}>
       <Routes>
         <Route path="/" element={<Agenda app={app} dispatch={dispatch} />} />
+        <Route path="/timeline" element={<TimelinePage app={app} />} />
         <Route
           path="/tasks"
           element={<TaskList app={app} dispatch={dispatch} />}
@@ -852,18 +917,6 @@ function TaskViewItem(props: {
                       app={app}
                       dispatch={dispatch}
                     />
-                  ))}
-              </div>
-              <div>
-                <div>Sessions</div>
-                {task.sessions
-                  .map((sid) => app.sessions[sid])
-                  .map((session) => (
-                    <div key={JSON.stringify(["session", task.id, session.id])}>
-                      {session.start.toISOString()} -{" "}
-                      {session.end?.toISOString() ?? ""} |{" "}
-                      {msToHHMMSS(elapsedTimeSession(session))}
-                    </div>
                   ))}
               </div>
             </div>
