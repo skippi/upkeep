@@ -13,6 +13,7 @@ export interface Task {
   estimate: number;
   name: string;
   notes: string;
+  repeat: number;
   scheduleDate: Date | null;
   sessions: number[];
 }
@@ -55,6 +56,7 @@ interface CreateTaskAction {
     estimate: number;
     name: string;
     notes: string;
+    repeat?: number;
     scheduleDate?: Date | null;
     sessions: number[];
   };
@@ -68,6 +70,7 @@ interface EditTaskAction {
     estimate?: number;
     name?: string;
     notes?: string;
+    repeat?: number;
     scheduleDate?: Date | null;
     sessions?: number[];
   };
@@ -107,11 +110,19 @@ export const appReducer = produce((draft: Draft<AppState>, action: Action) => {
     clockOutTask(draft, action.id);
   } else if (action.type === "createTask") {
     const id = generateId();
-    const scheduleDate = action.props.scheduleDate ?? null;
-    draft.tasks[id] = {
-      ...action.props,
+    const initialTask: Task = {
       id: id,
-      scheduleDate: scheduleDate,
+      completions: [],
+      estimate: 0,
+      name: "",
+      notes: "",
+      repeat: 0,
+      scheduleDate: null,
+      sessions: [],
+    };
+    draft.tasks[id] = {
+      ...initialTask,
+      ...action.props,
     };
   } else if (action.type === "editTask") {
     draft.tasks[action.id] = {

@@ -10,6 +10,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import NotesIcon from "@mui/icons-material/Notes";
 import PauseIcon from "@mui/icons-material/Pause";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import RepeatIcon from "@mui/icons-material/Repeat";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import TimerIcon from "@mui/icons-material/Timer";
 import ViewAgendaOutlinedIcon from "@mui/icons-material/ViewAgendaOutlined";
@@ -19,6 +20,7 @@ import {
   Badge,
   Box,
   Button,
+  Dialog,
   Divider,
   Drawer,
   Fab,
@@ -26,6 +28,7 @@ import {
   IconButton,
   List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   Paper,
@@ -290,6 +293,8 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
   const [name, setName] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [estimate, setEstimate] = useState<number | null>(null);
+  const [repeat, setRepeat] = useState<number>(0);
+  const [repeatOpen, setRepeatOpen] = useState<boolean>(false);
   const [scheduleDate, setScheduleDate] = useState<Date | null>(null);
   const { dispatch } = props;
   const navigate = useNavigate();
@@ -316,6 +321,7 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
                   estimate: estimate ?? 0,
                   name: name,
                   notes: notes,
+                  repeat: repeat,
                   scheduleDate: scheduleDate,
                   sessions: [],
                 },
@@ -362,6 +368,14 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
             )}
           />
         </ListItem>
+        <ListItemButton onClick={() => setRepeatOpen(true)}>
+          <ListItemIcon>
+            <RepeatIcon />
+          </ListItemIcon>
+          <ListItemText
+            primary={repeat !== 0 ? `Every day` : `Does not repeat`}
+          />
+        </ListItemButton>
         <ListItem>
           <Icon sx={{ paddingRight: "16px" }}>
             <TimerIcon />
@@ -380,6 +394,28 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
           />
         </ListItem>
       </List>
+      <Dialog open={repeatOpen} onClose={() => setRepeatOpen(false)}>
+        <List>
+          <ListItemButton
+            onClick={() => {
+              setRepeat(0);
+              setRepeatOpen(false);
+            }}
+            selected={repeat === 0}
+          >
+            <ListItemText primary="Does not exist" />
+          </ListItemButton>
+          <ListItemButton
+            onClick={() => {
+              setRepeat(moment.duration(1, "days").asMilliseconds());
+              setRepeatOpen(false);
+            }}
+            selected={repeat > 0}
+          >
+            <ListItemText primary="Every day" />
+          </ListItemButton>
+        </List>
+      </Dialog>
     </Box>
   );
 }
@@ -456,6 +492,16 @@ function TaskDetailPage(props: { app: AppState }) {
             />
           </ListItem>
         )}
+        {task && (
+          <ListItem>
+            <ListItemIcon>
+              <RepeatIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary={task.repeat !== 0 ? `Every day` : `Does not repeat`}
+            />
+          </ListItem>
+        )}
         {task && task.estimate !== null && (
           <ListItem>
             <ListItemIcon>
@@ -488,6 +534,8 @@ function EditTask(props: {
   const [name, setName] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [estimate, setEstimate] = useState<number | null>(null);
+  const [repeat, setRepeat] = useState<number>(0);
+  const [repeatOpen, setRepeatOpen] = useState<boolean>(false);
   const [scheduleDate, setScheduleDate] = useState<Date | null>(null);
   const [error, setError] = useState<Boolean>(false);
   const { app, dispatch } = props;
@@ -505,6 +553,7 @@ function EditTask(props: {
       setName(task.name);
       setNotes(task.notes);
       setEstimate(task.estimate);
+      setRepeat(task.repeat);
       setScheduleDate(task.scheduleDate);
       setError(false);
     } catch {
@@ -539,6 +588,7 @@ function EditTask(props: {
                   estimate: estimate ?? 0,
                   name: name,
                   notes: notes,
+                  repeat: repeat,
                   scheduleDate: scheduleDate,
                   sessions: [],
                 },
@@ -585,6 +635,14 @@ function EditTask(props: {
             )}
           />
         </ListItem>
+        <ListItemButton onClick={() => setRepeatOpen(true)}>
+          <ListItemIcon>
+            <RepeatIcon />
+          </ListItemIcon>
+          <ListItemText
+            primary={repeat !== 0 ? `Every day` : `Does not repeat`}
+          />
+        </ListItemButton>
         <ListItem>
           <Icon sx={{ paddingRight: "16px" }}>
             <TimerIcon />
@@ -603,42 +661,67 @@ function EditTask(props: {
           />
         </ListItem>
       </List>
+      <Dialog open={repeatOpen} onClose={() => setRepeatOpen(false)}>
+        <List>
+          <ListItemButton
+            onClick={() => {
+              setRepeat(0);
+              setRepeatOpen(false);
+            }}
+            selected={repeat === 0}
+          >
+            <ListItemText primary="Does not exist" />
+          </ListItemButton>
+          <ListItemButton
+            onClick={() => {
+              setRepeat(moment.duration(1, "days").asMilliseconds());
+              setRepeatOpen(false);
+            }}
+            selected={repeat > 0}
+          >
+            <ListItemText primary="Every day" />
+          </ListItemButton>
+        </List>
+      </Dialog>
     </Box>
   );
 }
 
 function loadLocalState(): AppState | null {
-  const data = localStorage.getItem("app")
+  const data = localStorage.getItem("app");
   if (!data) return null;
   try {
-    const app = JSON.parse(data) as AppState
-    app.touched = new Date(app.touched)
+    const app = JSON.parse(data) as AppState;
+    app.touched = new Date(app.touched);
     for (const task of Object.values(app.tasks)) {
       if (task.scheduleDate != null) {
-        task.scheduleDate = new Date(task.scheduleDate)
+        task.scheduleDate = new Date(task.scheduleDate);
       }
     }
     for (const session of Object.values(app.sessions)) {
-      session.start = new Date(session.start)
+      session.start = new Date(session.start);
       if (session.end != null) {
-        session.end = new Date(session.end)
+        session.end = new Date(session.end);
       }
     }
     for (const comp of Object.values(app.completions)) {
-      comp.date = new Date(comp.date)
+      comp.date = new Date(comp.date);
     }
-    return app
+    return app;
   } catch (SyntaxError) {
     return null;
   }
 }
 
 function App() {
-  const [app, dispatch] = useReducer(appReducer, loadLocalState() ?? initialState);
+  const [app, dispatch] = useReducer(
+    appReducer,
+    loadLocalState() ?? initialState
+  );
   const location = useLocation();
   useEffect(() => {
-    localStorage.setItem("app", JSON.stringify(app))
-  }, [app, location])
+    localStorage.setItem("app", JSON.stringify(app));
+  }, [app, location]);
   return (
     <Paper sx={{ minHeight: "100vh" }}>
       <Routes>
