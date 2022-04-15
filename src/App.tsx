@@ -1,6 +1,8 @@
 import AddIcon from "@mui/icons-material/Add";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
+import AssignmentTurnedInOutlinedIcon from "@mui/icons-material/AssignmentTurnedInOutlined";
 import AssistantOutlinedIcon from "@mui/icons-material/AssistantOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
@@ -183,6 +185,79 @@ function TaskList(props: {
             {i !== 0 && <Divider component="li" />}
             <TaskViewItem id={task.id} app={app} dispatch={dispatch} />
           </Box>
+        ))}
+      </List>
+    </Box>
+  );
+}
+
+function TaskCompletionListPage(props: { app: AppState }) {
+  function CompletionListItem(props: { id: number }) {
+    const [showDetails, setShowDetails] = useState<boolean>(false);
+    const { id } = props;
+    const completion = app.completions[id];
+    return (
+      <React.Fragment>
+        <ListItem
+          secondaryAction={
+            <IconButton
+              disabled={!completion.notes}
+              onClick={() => setShowDetails(!showDetails)}
+            >
+              {!showDetails ? <ArrowDropDownIcon /> : <ArrowDropUpIcon />}
+            </IconButton>
+          }
+        >
+          <ListItemText
+            primary={moment(completion.date).format("MM-DD-YYYY HH:mm")}
+          />
+        </ListItem>
+        {showDetails && <Box>{completion.notes}</Box>}
+      </React.Fragment>
+    );
+  }
+  const navigate = useNavigate();
+  const { app } = props;
+  const { id } = useParams<"id">();
+  const [task, setTask] = useState<Task | null>(null);
+  useEffect(() => {
+    try {
+      if (!id) {
+        throw new Error("missing id parameter");
+      }
+      const parsed = parseInt(id, 10);
+      if (isNaN(parsed)) {
+        throw new Error("id is not a number");
+      }
+      setTask(app.tasks[parseInt(id, 10)]);
+    } catch {
+      setTask(null);
+    }
+  }, [id, app.tasks]);
+  const compList = task?.completions.map((tid) => app.completions[tid]) ?? [];
+  compList.sort((a, b) => b.date.getTime() - a.date.getTime());
+  return (
+    <Box>
+      <AppBar position="sticky">
+        <Toolbar>
+          <IconButton
+            size="large"
+            edge="start"
+            color="inherit"
+            sx={{ mr: 1 }}
+            onClick={() => navigate(-1)}
+          >
+            <ArrowBackIcon />
+          </IconButton>
+          <Box sx={{ flexGrow: 1 }} />
+        </Toolbar>
+      </AppBar>
+      <List>
+        {compList.map((completion, i) => (
+          <React.Fragment key={completion.id}>
+            {i !== 0 && <Divider component="li" />}
+            <CompletionListItem id={completion.id} />
+          </React.Fragment>
         ))}
       </List>
     </Box>
@@ -580,6 +655,16 @@ function TaskDetailPage(props: { app: AppState }) {
             secondary={task && `${msToHHMMSS(averageTimeMATask(app, task.id))}`}
           />
         </ListItem>
+        {task && (
+          <ListItemButton
+            onClick={() => navigate(`/tasks/${task.id}/completions`)}
+          >
+            <ListItemIcon>
+              <AssignmentTurnedInOutlinedIcon />
+            </ListItemIcon>
+            <ListItemText primary="Completions" />
+          </ListItemButton>
+        )}
       </List>
     </Box>
   );
@@ -822,6 +907,10 @@ function App() {
           element={<CreateTask dispatch={dispatch} />}
         />
         <Route path="/tasks/:id/" element={<TaskDetailPage app={app} />} />
+        <Route
+          path="/tasks/:id/completions"
+          element={<TaskCompletionListPage app={app} />}
+        />
         <Route
           path="/tasks/:id/edit"
           element={<EditTask app={app} dispatch={dispatch} />}
