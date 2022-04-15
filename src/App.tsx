@@ -756,6 +756,12 @@ function TaskRepeatDialog(props: {
         >
           <ListItemText primary="Every day" />
         </ListItemButton>
+        <ListItemButton
+          onClick={() => onSelect([1, "weeks"])}
+          selected={value?.toString() === [1, "weeks"].toString()}
+        >
+          <ListItemText primary="Every week" />
+        </ListItemButton>
       </List>
     </Dialog>
   );
