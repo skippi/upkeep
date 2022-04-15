@@ -8,7 +8,7 @@ export interface AppState {
   touched: Date;
 }
 
-export type RepeatDuration = [number, "days" | "weeks"]
+export type RepeatDuration = [number, "days" | "weeks" | "months"]
 
 export interface Task {
   id: number;
