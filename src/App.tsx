@@ -58,6 +58,7 @@ import {
   elapsedTimeTask,
   initialState,
   isClockedInTask,
+  RepeatDuration,
   Session,
   Task,
   totalTimeTask,
@@ -357,7 +358,7 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
   const [name, setName] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [estimate, setEstimate] = useState<number | null>(null);
-  const [repeat, setRepeat] = useState<number>(0);
+  const [repeat, setRepeat] = useState<RepeatDuration>([0, "days"]);
   const [repeatOpen, setRepeatOpen] = useState<boolean>(false);
   const [scheduleDate, setScheduleDate] = useState<Date | null>(null);
   const { dispatch } = props;
@@ -437,7 +438,9 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
             <RepeatIcon />
           </ListItemIcon>
           <ListItemText
-            primary={repeat !== 0 ? `Every day` : `Does not repeat`}
+            primary={
+              repeat[0] ? `Every ${repeat[0]} ${repeat[1]}` : `Does not repeat`
+            }
           />
         </ListItemButton>
         <ListItem>
@@ -458,28 +461,15 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
           />
         </ListItem>
       </List>
-      <Dialog open={repeatOpen} onClose={() => setRepeatOpen(false)}>
-        <List>
-          <ListItemButton
-            onClick={() => {
-              setRepeat(0);
-              setRepeatOpen(false);
-            }}
-            selected={repeat === 0}
-          >
-            <ListItemText primary="Does not exist" />
-          </ListItemButton>
-          <ListItemButton
-            onClick={() => {
-              setRepeat(moment.duration(1, "days").asMilliseconds());
-              setRepeatOpen(false);
-            }}
-            selected={repeat > 0}
-          >
-            <ListItemText primary="Every day" />
-          </ListItemButton>
-        </List>
-      </Dialog>
+      <TaskRepeatDialog
+        open={repeatOpen}
+        value={repeat}
+        onClose={() => setRepeatOpen(false)}
+        onSelect={(value) => {
+          setRepeat(value);
+          setRepeatOpen(false);
+        }}
+      />
     </Box>
   );
 }
@@ -562,7 +552,11 @@ function TaskDetailPage(props: { app: AppState }) {
               <RepeatIcon />
             </ListItemIcon>
             <ListItemText
-              primary={task.repeat !== 0 ? `Every day` : `Does not repeat`}
+              primary={
+                task.repeat[0]
+                  ? `Every ${task.repeat[0]} ${task.repeat[1]}`
+                  : `Does not repeat`
+              }
             />
           </ListItem>
         )}
@@ -598,7 +592,7 @@ function EditTask(props: {
   const [name, setName] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [estimate, setEstimate] = useState<number | null>(null);
-  const [repeat, setRepeat] = useState<number>(0);
+  const [repeat, setRepeat] = useState<RepeatDuration>([0, "days"]);
   const [repeatOpen, setRepeatOpen] = useState<boolean>(false);
   const [scheduleDate, setScheduleDate] = useState<Date | null>(null);
   const [error, setError] = useState<Boolean>(false);
@@ -704,7 +698,9 @@ function EditTask(props: {
             <RepeatIcon />
           </ListItemIcon>
           <ListItemText
-            primary={repeat !== 0 ? `Every day` : `Does not repeat`}
+            primary={
+              repeat[0] ? `Every ${repeat[0]} ${repeat[1]}` : `Does not repeat`
+            }
           />
         </ListItemButton>
         <ListItem>
@@ -725,29 +721,43 @@ function EditTask(props: {
           />
         </ListItem>
       </List>
-      <Dialog open={repeatOpen} onClose={() => setRepeatOpen(false)}>
-        <List>
-          <ListItemButton
-            onClick={() => {
-              setRepeat(0);
-              setRepeatOpen(false);
-            }}
-            selected={repeat === 0}
-          >
-            <ListItemText primary="Does not exist" />
-          </ListItemButton>
-          <ListItemButton
-            onClick={() => {
-              setRepeat(moment.duration(1, "days").asMilliseconds());
-              setRepeatOpen(false);
-            }}
-            selected={repeat > 0}
-          >
-            <ListItemText primary="Every day" />
-          </ListItemButton>
-        </List>
-      </Dialog>
+      <TaskRepeatDialog
+        open={repeatOpen}
+        value={repeat}
+        onClose={() => setRepeatOpen(false)}
+        onSelect={(value) => {
+          setRepeat(value);
+          setRepeatOpen(false);
+        }}
+      />
     </Box>
+  );
+}
+
+function TaskRepeatDialog(props: {
+  onClose: () => void;
+  onSelect: (value: RepeatDuration) => void;
+  open: boolean;
+  value: RepeatDuration;
+}) {
+  const { onClose, onSelect, open, value } = props;
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <List>
+        <ListItemButton
+          onClick={() => onSelect([0, "days"])}
+          selected={!value[0]}
+        >
+          <ListItemText primary="Does not exist" />
+        </ListItemButton>
+        <ListItemButton
+          onClick={() => onSelect([1, "days"])}
+          selected={value?.toString() === [1, "days"].toString()}
+        >
+          <ListItemText primary="Every day" />
+        </ListItemButton>
+      </List>
+    </Dialog>
   );
 }
 

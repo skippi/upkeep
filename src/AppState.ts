@@ -8,13 +8,15 @@ export interface AppState {
   touched: Date;
 }
 
+export type RepeatDuration = [number, "days" | "weeks"]
+
 export interface Task {
   id: number;
   completions: number[];
   estimate: number;
   name: string;
   notes: string;
-  repeat: number;
+  repeat: RepeatDuration;
   scheduleDate: Date | null;
   sessions: number[];
 }
@@ -57,7 +59,7 @@ interface CreateTaskAction {
     estimate: number;
     name: string;
     notes: string;
-    repeat?: number;
+    repeat?: RepeatDuration;
     scheduleDate?: Date | null;
     sessions: number[];
   };
@@ -71,7 +73,7 @@ interface EditTaskAction {
     estimate?: number;
     name?: string;
     notes?: string;
-    repeat?: number;
+    repeat?: RepeatDuration;
     scheduleDate?: Date | null;
     sessions?: number[];
   };
@@ -109,10 +111,10 @@ export const appReducer = produce((draft: Draft<AppState>, action: Action) => {
     draft.completions[completion.id] = completion;
     const task = draft.tasks[action.id];
     task.completions.push(completion.id);
-    if (task.repeat) {
+    if (task.repeat[0]) {
       task.scheduleDate = moment(task.scheduleDate ?? new Date())
         .startOf("day")
-        .add(task.repeat)
+        .add(task.repeat[0], task.repeat[1])
         .toDate();
     }
     clockOutTask(draft, action.id);
@@ -124,7 +126,7 @@ export const appReducer = produce((draft: Draft<AppState>, action: Action) => {
       estimate: 0,
       name: "",
       notes: "",
-      repeat: 0,
+      repeat: [0, "days"],
       scheduleDate: null,
       sessions: [],
     };
