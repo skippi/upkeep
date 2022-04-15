@@ -550,7 +550,6 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
 }
 
 function TaskDetailPage(props: { app: AppState }) {
-  const [error, setError] = useState<Boolean>(false);
   const [task, setTask] = useState<Task | null>(null);
   const { id } = useParams<"id">();
   const { app } = props;
@@ -564,15 +563,12 @@ function TaskDetailPage(props: { app: AppState }) {
         throw new Error("id is not a number");
       }
       setTask(app.tasks[parseInt(id, 10)]);
-      setError(false);
     } catch {
-      setError(true);
+      setTask(null);
     }
   }, [id, app.tasks]);
   const navigate = useNavigate();
-  if (error) {
-    return <Box></Box>;
-  }
+  if (task == null) return <Box />;
   return (
     <Box>
       <AppBar position="sticky">
@@ -584,7 +580,7 @@ function TaskDetailPage(props: { app: AppState }) {
             sx={{ mr: 1 }}
             onClick={() => navigate(-1)}
           >
-            <CloseIcon />
+            <ArrowBackIcon />
           </IconButton>
           <Box sx={{ flexGrow: 1 }} />
           <IconButton
@@ -599,10 +595,12 @@ function TaskDetailPage(props: { app: AppState }) {
       </AppBar>
       <List>
         <ListItem>
-          <Typography sx={{ flexGrow: 1 }}>{task?.name}</Typography>
+          <ListItemText sx={{ flexGrow: 1 }}>
+            <Typography variant="h5">{task.name}</Typography>
+          </ListItemText>
         </ListItem>
         <Divider component="li" />
-        {task && task.notes && (
+        {task.notes && (
           <ListItem>
             <ListItemIcon>
               <NotesIcon />
@@ -610,7 +608,7 @@ function TaskDetailPage(props: { app: AppState }) {
             <ListItemText primary={task.notes} sx={{ flexGrow: 1 }} />
           </ListItem>
         )}
-        {task && task.scheduleDate && (
+        {task.scheduleDate && (
           <ListItem>
             <ListItemIcon>
               <ScheduleIcon />
@@ -621,21 +619,19 @@ function TaskDetailPage(props: { app: AppState }) {
             />
           </ListItem>
         )}
-        {task && (
-          <ListItem>
-            <ListItemIcon>
-              <RepeatIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary={
-                task.repeat[0]
-                  ? `Every ${task.repeat[0]} ${task.repeat[1]}`
-                  : `Does not repeat`
-              }
-            />
-          </ListItem>
-        )}
-        {task && task.estimate !== null && (
+        <ListItem>
+          <ListItemIcon>
+            <RepeatIcon />
+          </ListItemIcon>
+          <ListItemText
+            primary={
+              task.repeat[0]
+                ? `Every ${task.repeat[0]} ${task.repeat[1]}`
+                : `Does not repeat`
+            }
+          />
+        </ListItem>
+        {task.estimate !== null && (
           <ListItem>
             <ListItemIcon>
               <TimerIcon />
@@ -651,20 +647,18 @@ function TaskDetailPage(props: { app: AppState }) {
             <HistoryIcon />
           </ListItemIcon>
           <ListItemText
-            primary="Average Length"
+            primary="Calculated Estimate"
             secondary={task && `${msToHHMMSS(averageTimeMATask(app, task.id))}`}
           />
         </ListItem>
-        {task && (
-          <ListItemButton
-            onClick={() => navigate(`/tasks/${task.id}/completions`)}
-          >
-            <ListItemIcon>
-              <AssignmentTurnedInOutlinedIcon />
-            </ListItemIcon>
-            <ListItemText primary="Completions" />
-          </ListItemButton>
-        )}
+        <ListItemButton
+          onClick={() => navigate(`/tasks/${task.id}/completions`)}
+        >
+          <ListItemIcon>
+            <AssignmentTurnedInOutlinedIcon />
+          </ListItemIcon>
+          <ListItemText primary="Completions" />
+        </ListItemButton>
       </List>
     </Box>
   );
