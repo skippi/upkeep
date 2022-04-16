@@ -283,10 +283,13 @@ function TaskCompletionListPage(props: { app: AppState }) {
   );
 }
 
-function TimelinePage(props: { app: AppState }) {
-  const [date, setDate] = useState<Date>(new Date());
+function TimelinePage(props: {
+  app: AppState;
+  dispatch: (action: Action) => void;
+}) {
   const [openDate, setOpenDate] = useState<boolean>(false);
-  const { app } = props;
+  const { app, dispatch } = props;
+  const date = app.ui.agendaDate;
   const viewSessions = Object.values(app.tasks)
     .flatMap((task) =>
       task.sessions.map((sid): [Session, Task] => [app.sessions[sid], task])
@@ -316,7 +319,12 @@ function TimelinePage(props: { app: AppState }) {
               <DatePicker
                 value={date}
                 open={openDate}
-                onChange={(newDate) => setDate(newDate ?? new Date())}
+                onChange={(newDate) =>
+                  dispatch({
+                    type: "selectAgendaDate",
+                    date: newDate ?? new Date(),
+                  })
+                }
                 onClose={() => setOpenDate(false)}
                 renderInput={() => <div></div>}
               />
@@ -362,8 +370,7 @@ function AgendaBottomNavigation() {
   );
 }
 
-function Agenda(props: { app: AppState; dispatch: (action: Action) => void }) {
-  const [date, setDate] = useState<Date>(new Date());
+function AgendaPage(props: { app: AppState; dispatch: (action: Action) => void }) {
   const [openDate, setOpenDate] = useState<boolean>(false);
   const [assistItems, setAssistItems] = useState<string[]>([]);
   const [assistAnchor, setAssistAnchor] = useState<HTMLButtonElement | null>(
@@ -371,6 +378,7 @@ function Agenda(props: { app: AppState; dispatch: (action: Action) => void }) {
   );
   const navigate = useNavigate();
   const { app, dispatch } = props;
+  const date = app.ui.agendaDate;
   useEffect(() => {
     const items = [];
     const agendaTotalTime = Object.values(app.tasks)
@@ -407,7 +415,12 @@ function Agenda(props: { app: AppState; dispatch: (action: Action) => void }) {
               <DatePicker
                 value={date}
                 open={openDate}
-                onChange={(newDate) => setDate(newDate ?? new Date())}
+                onChange={(newDate) =>
+                  dispatch({
+                    type: "selectAgendaDate",
+                    date: newDate ?? new Date(),
+                  })
+                }
                 onClose={() => setOpenDate(false)}
                 renderInput={() => <div></div>}
               />
@@ -937,8 +950,11 @@ function App() {
   return (
     <Paper sx={{ minHeight: "100vh" }}>
       <Routes>
-        <Route path="/" element={<Agenda app={app} dispatch={dispatch} />} />
-        <Route path="/timeline" element={<TimelinePage app={app} />} />
+        <Route path="/" element={<AgendaPage app={app} dispatch={dispatch} />} />
+        <Route
+          path="/timeline"
+          element={<TimelinePage app={app} dispatch={dispatch} />}
+        />
         <Route
           path="/tasks"
           element={<TaskListPage app={app} dispatch={dispatch} />}

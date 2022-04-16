@@ -2,6 +2,9 @@ import produce, { Draft } from "immer";
 import moment from "moment";
 
 export interface AppState {
+  ui: {
+    agendaDate: Date;
+  };
   completions: { [id: number]: Completion };
   sessions: { [id: number]: Session };
   tasks: { [id: number]: Task };
@@ -40,7 +43,13 @@ export type Action =
   | ToggleClockTaskAction
   | DeleteTaskAction
   | EditCompletionNotesAction
-  | RefreshAction;
+  | RefreshAction
+  | SelectAgendaDate;
+
+interface SelectAgendaDate {
+  type: "selectAgendaDate";
+  date: Date;
+}
 
 interface CloseTaskAction {
   type: "closeTask";
@@ -95,6 +104,9 @@ interface RefreshAction {
 }
 
 export const initialState: AppState = {
+  ui: {
+    agendaDate: new Date(),
+  },
   completions: {},
   sessions: {},
   tasks: {},
@@ -161,6 +173,8 @@ export const appReducer = produce((draft: Draft<AppState>, action: Action) => {
     draft.completions[action.id].notes = action.value;
   } else if (action.type === "refresh") {
     draft.touched = new Date();
+  } else if (action.type === "selectAgendaDate") {
+    draft.ui.agendaDate = action.date;
   }
 });
 
