@@ -29,6 +29,7 @@ import {
   Fab,
   Icon,
   IconButton,
+  InputBase,
   List,
   ListItem,
   ListItemButton,
@@ -40,6 +41,7 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
+import { byStartAsc, Fzf } from "fzf";
 import moment from "moment";
 import React, { useEffect, useReducer, useState } from "react";
 import {
@@ -154,7 +156,7 @@ function MainNavBar(props: { title?: string; titleNode?: React.ReactNode }) {
   );
 }
 
-function TaskList(props: {
+function TaskListPage(props: {
   app: AppState;
   dispatch: (action: Action) => void;
 }) {
@@ -164,9 +166,35 @@ function TaskList(props: {
     const interval = setInterval(() => dispatch({ type: "refresh" }), 1000);
     return () => clearInterval(interval);
   }, [app, dispatch]);
+  const [sortedIds, setSortedIds] = useState<number[]>([]);
+  const tasks: Task[] = [];
+  if (sortedIds.length === 0) {
+    tasks.push(...Object.values(app.tasks));
+    tasks.sort((a, b) => a.name.localeCompare(b.name));
+  } else {
+    tasks.push(...sortedIds.map((tid) => app.tasks[tid]));
+  }
   return (
     <Box>
       <MainNavBar title="Tasks" />
+      <Box>
+        <InputBase
+          placeholder="Search..."
+          onChange={(e) => {
+            const query = e.target.value.trim();
+            if (query.length === 0) {
+              setSortedIds([]);
+              return;
+            }
+            const fzf = new Fzf(tasks, {
+              limit: 50,
+              selector: (item) => `${item.name} ${item.notes}`,
+              tiebreakers: [byStartAsc],
+            });
+            setSortedIds(fzf.find(query).map((result) => result.item.id));
+          }}
+        />
+      </Box>
       <Fab
         color="primary"
         aria-label="add"
@@ -180,7 +208,7 @@ function TaskList(props: {
         <AddIcon />
       </Fab>
       <List>
-        {Object.values(app.tasks).map((task, i) => (
+        {tasks.map((task, i) => (
           <Box key={task.id}>
             {i !== 0 && <Divider component="li" />}
             <TaskViewItem id={task.id} app={app} dispatch={dispatch} />
@@ -894,7 +922,7 @@ function App() {
         <Route path="/timeline" element={<TimelinePage app={app} />} />
         <Route
           path="/tasks"
-          element={<TaskList app={app} dispatch={dispatch} />}
+          element={<TaskListPage app={app} dispatch={dispatch} />}
         />
         <Route
           path="/tasks/create"
