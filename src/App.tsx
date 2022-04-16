@@ -346,6 +346,7 @@ function TimelinePage(props: {
 
 function AgendaBottomNavigation() {
   const navigate = useNavigate();
+  const location = useLocation();
   return (
     <Paper
       sx={{ position: "fixed", bottom: 0, left: 0, right: 0 }}
@@ -353,6 +354,7 @@ function AgendaBottomNavigation() {
     >
       <BottomNavigation
         showLabels
+        value={location.pathname}
         onChange={(_event, value) => navigate(value)}
       >
         <BottomNavigationAction
@@ -370,7 +372,10 @@ function AgendaBottomNavigation() {
   );
 }
 
-function AgendaPage(props: { app: AppState; dispatch: (action: Action) => void }) {
+function AgendaPage(props: {
+  app: AppState;
+  dispatch: (action: Action) => void;
+}) {
   const [openDate, setOpenDate] = useState<boolean>(false);
   const [assistItems, setAssistItems] = useState<string[]>([]);
   const [assistAnchor, setAssistAnchor] = useState<HTMLButtonElement | null>(
@@ -950,7 +955,10 @@ function App() {
   return (
     <Paper sx={{ minHeight: "100vh" }}>
       <Routes>
-        <Route path="/" element={<AgendaPage app={app} dispatch={dispatch} />} />
+        <Route
+          path="/"
+          element={<AgendaPage app={app} dispatch={dispatch} />}
+        />
         <Route
           path="/timeline"
           element={<TimelinePage app={app} dispatch={dispatch} />}
