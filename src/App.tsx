@@ -2,6 +2,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
+import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
 import AssignmentTurnedInOutlinedIcon from "@mui/icons-material/AssignmentTurnedInOutlined";
 import AssistantOutlinedIcon from "@mui/icons-material/AssistantOutlined";
 import CloseIcon from "@mui/icons-material/Close";
@@ -367,6 +368,11 @@ function AgendaBottomNavigation() {
           label="Timeline"
           icon={<FormatListBulletedIcon />}
         />
+        <BottomNavigationAction
+          value="/analytics"
+          label="Analytics"
+          icon={<AssessmentOutlinedIcon />}
+        />
       </BottomNavigation>
     </Paper>
   );
@@ -489,6 +495,80 @@ function AgendaPage(props: {
       >
         <AddIcon />
       </Fab>
+      <AgendaBottomNavigation />
+    </React.Fragment>
+  );
+}
+
+function AgendaAnalyticsPage(props: {
+  app: AppState;
+  dispatch: (action: Action) => void;
+}) {
+  const [openDate, setOpenDate] = useState<boolean>(false);
+  const { app, dispatch } = props;
+  const date = app.ui.agendaDate;
+  useEffect(() => {
+    const interval = setInterval(() => dispatch({ type: "refresh" }), 1000);
+    return () => clearInterval(interval);
+  }, [app, dispatch]);
+  const viewItems = Object.values(app.tasks)
+    .filter((task) => task.sessions.length)
+    .map((task) => {
+      const timeSpent: number = task.sessions
+        .map((sid) => app.sessions[sid])
+        .filter(
+          (s) =>
+            moment(s.start).isSameOrAfter(date, "day") &&
+            moment(s.start).isBefore(moment(date).add(1, "days"), "day")
+        )
+        .map(elapsedTimeSession)
+        .reduce((acc, time) => acc + time, 0);
+      return {
+        name: task.name,
+        timeSpent: timeSpent,
+      };
+    });
+  viewItems.sort((a, b) => b.timeSpent - a.timeSpent);
+  return (
+    <React.Fragment>
+      <MainNavBar
+        titleNode={
+          <React.Fragment>
+            <Typography sx={{ flexGrow: 1 }} variant="h6" component="span">
+              {moment(date).format("MMM DD")}
+              <IconButton
+                edge="start"
+                sx={{ padding: 0, marginLeft: 0 }}
+                onClick={() => setOpenDate(!openDate)}
+              >
+                <ArrowDropDownIcon />
+              </IconButton>
+              <DatePicker
+                value={date}
+                open={openDate}
+                onChange={(newDate) =>
+                  dispatch({
+                    type: "selectAgendaDate",
+                    date: newDate ?? new Date(),
+                  })
+                }
+                onClose={() => setOpenDate(false)}
+                renderInput={() => <div></div>}
+              />
+            </Typography>
+          </React.Fragment>
+        }
+      />
+      {viewItems.map((item, i) => (
+        <Box key={i}>
+          {item.name} {moment.utc(item.timeSpent).format("HH:mm:ss")}{" "}
+          {(
+            (item.timeSpent / moment.duration(1, "days").as("milliseconds")) *
+            100
+          ).toFixed(2)}
+          %
+        </Box>
+      ))}
       <AgendaBottomNavigation />
     </React.Fragment>
   );
@@ -962,6 +1042,10 @@ function App() {
         <Route
           path="/timeline"
           element={<TimelinePage app={app} dispatch={dispatch} />}
+        />
+        <Route
+          path="/analytics"
+          element={<AgendaAnalyticsPage app={app} dispatch={dispatch} />}
         />
         <Route
           path="/tasks"
