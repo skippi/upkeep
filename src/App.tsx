@@ -14,13 +14,14 @@ import PauseIcon from "@mui/icons-material/Pause";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import RepeatIcon from "@mui/icons-material/Repeat";
 import ScheduleIcon from "@mui/icons-material/Schedule";
-import TimelineIcon from "@mui/icons-material/Timeline";
 import TimerIcon from "@mui/icons-material/Timer";
 import ViewAgendaOutlinedIcon from "@mui/icons-material/ViewAgendaOutlined";
 import { DatePicker, MobileDateTimePicker } from "@mui/lab";
 import {
   AppBar,
   Badge,
+  BottomNavigation,
+  BottomNavigationAction,
   Box,
   Button,
   Dialog,
@@ -138,16 +139,6 @@ function MainNavBar(props: { title?: string; titleNode?: React.ReactNode }) {
                 <FormatListBulletedIcon />
               </ListItemIcon>
               <ListItemText>Tasks</ListItemText>
-            </ListItem>
-            <ListItem
-              button
-              onClick={() => navigate("/timeline")}
-              selected={!!useMatch("/timeline")}
-            >
-              <ListItemIcon>
-                <TimelineIcon />
-              </ListItemIcon>
-              <ListItemText>Timeline</ListItemText>
             </ListItem>
           </List>
         </Box>
@@ -340,7 +331,34 @@ function TimelinePage(props: { app: AppState }) {
           {msToHHMMSS(elapsedTimeSession(session))}) {task.name}
         </Box>
       ))}
+      <AgendaBottomNavigation />
     </React.Fragment>
+  );
+}
+
+function AgendaBottomNavigation() {
+  const navigate = useNavigate();
+  return (
+    <Paper
+      sx={{ position: "fixed", bottom: 0, left: 0, right: 0 }}
+      elevation={3}
+    >
+      <BottomNavigation
+        showLabels
+        onChange={(_event, value) => navigate(value)}
+      >
+        <BottomNavigationAction
+          value="/"
+          label="Agenda"
+          icon={<ViewAgendaOutlinedIcon />}
+        />
+        <BottomNavigationAction
+          value="/timeline"
+          label="Timeline"
+          icon={<FormatListBulletedIcon />}
+        />
+      </BottomNavigation>
+    </Paper>
   );
 }
 
@@ -446,13 +464,14 @@ function Agenda(props: { app: AppState; dispatch: (action: Action) => void }) {
         aria-label="add"
         sx={{
           position: "absolute",
-          bottom: 16,
+          bottom: 16 + 56,
           right: 16,
         }}
         onClick={() => navigate("/tasks/create")}
       >
         <AddIcon />
       </Fab>
+      <AgendaBottomNavigation />
     </React.Fragment>
   );
 }
