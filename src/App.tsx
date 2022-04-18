@@ -54,6 +54,7 @@ import {
   useNavigate,
   useParams,
 } from "react-router-dom";
+import { useEventListener } from "usehooks-ts";
 import "./App.css";
 import {
   Action,
@@ -603,6 +604,28 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
   );
   const { dispatch } = props;
   const navigate = useNavigate();
+  const saveForm = () => {
+    dispatch({
+      type: "createTask",
+      props: {
+        completions: [],
+        estimate: estimate ?? 0,
+        name: name,
+        notes: notes,
+        repeat: repeat,
+        scheduleDate: scheduleDate,
+        sessions: [],
+      },
+    });
+    navigate(-1);
+  };
+  useEventListener("keydown", (event: KeyboardEvent) => {
+    if (event.key === "Escape") navigate(-1);
+    if (event.ctrlKey && event.key === "s") {
+      event.preventDefault();
+      saveForm();
+    }
+  });
   return (
     <Box>
       <AppBar position="sticky">
@@ -617,23 +640,7 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
             <CloseIcon />
           </IconButton>
           <Box sx={{ flexGrow: 1 }} />
-          <Button
-            onClick={() => {
-              dispatch({
-                type: "createTask",
-                props: {
-                  completions: [],
-                  estimate: estimate ?? 0,
-                  name: name,
-                  notes: notes,
-                  repeat: repeat,
-                  scheduleDate: scheduleDate,
-                  sessions: [],
-                },
-              });
-              navigate(-1);
-            }}
-          >
+          <Button type="submit" onClick={saveForm}>
             Save
           </Button>
         </Toolbar>
@@ -718,6 +725,9 @@ function TaskDetailPage(props: { app: AppState }) {
   const [task, setTask] = useState<Task | null>(null);
   const { id } = useParams<"id">();
   const { app } = props;
+  useEventListener("keydown", (event: KeyboardEvent) => {
+    if (event.key === "Escape") navigate(-1);
+  });
   useEffect(() => {
     try {
       if (!id) {
@@ -842,6 +852,29 @@ function EditTask(props: {
   const [error, setError] = useState<Boolean>(false);
   const { app, dispatch } = props;
   const { id } = useParams<"id">();
+  const saveForm = () => {
+    dispatch({
+      type: "editTask",
+      id: parseInt(id!, 10),
+      props: {
+        completions: [],
+        estimate: estimate ?? 0,
+        name: name,
+        notes: notes,
+        repeat: repeat,
+        scheduleDate: scheduleDate,
+        sessions: [],
+      },
+    });
+    navigate(-1);
+  };
+  useEventListener("keydown", (event: KeyboardEvent) => {
+    if (event.key === "Escape") navigate(-1);
+    if (event.ctrlKey && event.key === "s") {
+      event.preventDefault();
+      saveForm();
+    }
+  });
   useEffect(() => {
     try {
       if (!id) {
@@ -880,26 +913,7 @@ function EditTask(props: {
             <CloseIcon />
           </IconButton>
           <Box sx={{ flexGrow: 1 }} />
-          <Button
-            onClick={() => {
-              dispatch({
-                type: "editTask",
-                id: parseInt(id!, 10),
-                props: {
-                  completions: [],
-                  estimate: estimate ?? 0,
-                  name: name,
-                  notes: notes,
-                  repeat: repeat,
-                  scheduleDate: scheduleDate,
-                  sessions: [],
-                },
-              });
-              navigate(-1);
-            }}
-          >
-            Save
-          </Button>
+          <Button onClick={saveForm}>Save</Button>
         </Toolbar>
       </AppBar>
       <List>
