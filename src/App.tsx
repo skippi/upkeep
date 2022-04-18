@@ -45,7 +45,7 @@ import {
 } from "@mui/material";
 import { byStartAsc, Fzf } from "fzf";
 import moment from "moment";
-import React, { useEffect, useReducer, useState } from "react";
+import React, { useEffect, useMemo, useReducer, useState } from "react";
 import {
   Route,
   Routes,
@@ -491,7 +491,13 @@ function AgendaPage(props: {
           bottom: 16 + 56,
           right: 16,
         }}
-        onClick={() => navigate("/tasks/create")}
+        onClick={() =>
+          navigate(
+            `/tasks/create?scheduleDate=${moment(date)
+              .startOf("day")
+              .toISOString()}`
+          )
+        }
       >
         <AddIcon />
       </Fab>
@@ -574,13 +580,27 @@ function AgendaAnalyticsPage(props: {
   );
 }
 
+function useQuery() {
+  const { search } = useLocation();
+  return useMemo(() => new URLSearchParams(search), [search]);
+}
+
 function CreateTask(props: { dispatch: (action: Action) => void }) {
+  const query = useQuery();
   const [name, setName] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [estimate, setEstimate] = useState<number | null>(null);
   const [repeat, setRepeat] = useState<RepeatDuration>([0, "days"]);
   const [repeatOpen, setRepeatOpen] = useState<boolean>(false);
-  const [scheduleDate, setScheduleDate] = useState<Date | null>(null);
+  const [scheduleDate, setScheduleDate] = useState<Date | null>(
+    (() => {
+      const param = query.get("scheduleDate");
+      if (!param) {
+        return null;
+      }
+      return new Date(param);
+    })()
+  );
   const { dispatch } = props;
   const navigate = useNavigate();
   return (
