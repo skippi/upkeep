@@ -54,7 +54,7 @@ import {
   useNavigate,
   useParams,
 } from "react-router-dom";
-import { useEventListener } from "usehooks-ts";
+import { useEventListener, useInterval } from "usehooks-ts";
 import "./App.css";
 import {
   Action,
@@ -155,10 +155,7 @@ function TaskListPage(props: {
 }) {
   const navigate = useNavigate();
   const { app, dispatch } = props;
-  useEffect(() => {
-    const interval = setInterval(() => dispatch({ type: "refresh" }), 1000);
-    return () => clearInterval(interval);
-  }, [app, dispatch]);
+  useInterval(() => dispatch({ type: "refresh" }), 1000);
   const [sortedIds, setSortedIds] = useState<number[]>([]);
   const tasks: Task[] = [];
   if (sortedIds.length === 0) {
@@ -406,10 +403,7 @@ function AgendaPage(props: {
     }
     setAssistItems(items);
   }, [date, app.tasks]);
-  useEffect(() => {
-    const interval = setInterval(() => dispatch({ type: "refresh" }), 1000);
-    return () => clearInterval(interval);
-  }, [app, dispatch]);
+  useInterval(() => dispatch({ type: "refresh" }), 1000);
   return (
     <React.Fragment>
       <MainNavBar
@@ -514,10 +508,7 @@ function AgendaAnalyticsPage(props: {
   const [openDate, setOpenDate] = useState<boolean>(false);
   const { app, dispatch } = props;
   const date = app.ui.agendaDate;
-  useEffect(() => {
-    const interval = setInterval(() => dispatch({ type: "refresh" }), 1000);
-    return () => clearInterval(interval);
-  }, [app, dispatch]);
+  useInterval(() => dispatch({ type: "refresh" }), 1000);
   const viewItems = Object.values(app.tasks)
     .filter((task) => task.sessions.length)
     .map((task) => {
