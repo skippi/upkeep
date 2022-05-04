@@ -1057,6 +1057,7 @@ function App() {
   useEffect(() => {
     localStorage.setItem("app", JSON.stringify(app));
   }, [app, location]);
+  useEventListener("contextmenu", (event) => event.preventDefault());
   return (
     <Paper sx={{ minHeight: "100vh" }}>
       <Routes>
