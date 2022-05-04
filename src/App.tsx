@@ -2,10 +2,13 @@ import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
+import ArticleIcon from "@mui/icons-material/Article";
 import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
 import AssignmentTurnedInOutlinedIcon from "@mui/icons-material/AssignmentTurnedInOutlined";
 import AssistantOutlinedIcon from "@mui/icons-material/AssistantOutlined";
+import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import HistoryIcon from "@mui/icons-material/History";
@@ -385,6 +388,7 @@ function AgendaPage(props: {
   const [assistAnchor, setAssistAnchor] = useState<HTMLButtonElement | null>(
     null
   );
+  const [mode, setMode] = useState<"view" | "edit">("view");
   const navigate = useNavigate();
   const { app, dispatch } = props;
   const date = app.ui.agendaDate;
@@ -404,6 +408,20 @@ function AgendaPage(props: {
     setAssistItems(items);
   }, [date, app.tasks]);
   useInterval(() => dispatch({ type: "refresh" }), 1000);
+  const tasks = Object.values(app.tasks).filter((task) =>
+    moment(task.scheduleDate).isSame(moment(date), "date")
+  );
+  if (mode === "edit") {
+    return (
+      <AgendaBulkEditView
+        app={app}
+        dispatch={dispatch}
+        taskIds={tasks.map((t) => t.id)}
+        onExit={() => setMode("view")}
+        onBulkDelete={() => setMode("view")}
+      />
+    );
+  }
   return (
     <React.Fragment>
       <MainNavBar
@@ -467,16 +485,17 @@ function AgendaPage(props: {
         }
       />
       <List>
-        {Object.values(app.tasks)
-          .filter((task) =>
-            moment(task.scheduleDate).isSame(moment(date), "date")
-          )
-          .map((task, i) => (
-            <Box key={task.id}>
-              {i !== 0 && <Divider component="li" />}
-              <TaskViewItem id={task.id} app={app} dispatch={dispatch} />
-            </Box>
-          ))}
+        {tasks.map((task, i) => (
+          <React.Fragment key={task.id}>
+            {i !== 0 && <Divider component="li" />}
+            <TaskViewItem
+              id={task.id}
+              app={app}
+              dispatch={dispatch}
+              onLongPress={() => setMode("edit")}
+            />
+          </React.Fragment>
+        ))}
       </List>
       <Fab
         color="primary"
@@ -1125,14 +1144,115 @@ function CompletionViewItem(props: {
   );
 }
 
+function useLongPress(callback = () => {}) {
+  const [startLongPress, setStartLongPress] = useState(false);
+  useEffect(() => {
+    let timerId: NodeJS.Timeout | null = null;
+    if (startLongPress) {
+      timerId = setTimeout(callback, 500);
+    } else {
+      clearTimeout(timerId!);
+    }
+    return () => {
+      clearTimeout(timerId!);
+    };
+  }, [callback, startLongPress]);
+  return {
+    onMouseDown: () => setStartLongPress(true),
+    onMouseUp: () => setStartLongPress(false),
+    onMouseLeave: () => setStartLongPress(false),
+    onTouchStart: () => setStartLongPress(true),
+    onTouchEnd: () => setStartLongPress(false),
+  };
+}
+
+function AgendaBulkEditView(props: {
+  app: AppState;
+  dispatch: (action: Action) => void;
+  taskIds: number[];
+  onBulkDelete: () => any;
+  onExit: () => any;
+}) {
+  const BulkEditListItem = (props: {
+    task: Task;
+    selected: boolean;
+    onToggle: (taskId: number, selected: boolean) => void;
+  }) => {
+    const { task, selected, onToggle } = props;
+    return (
+      <ListItem
+        selected={selected}
+        onClick={(_) => {
+          onToggle(task.id, !selected);
+        }}
+      >
+        <ListItemIcon>
+          {selected ? <CheckIcon /> : <ArticleIcon />}
+        </ListItemIcon>
+        <ListItemText primary={task.name} />
+      </ListItem>
+    );
+  };
+  const { app, dispatch, taskIds, onBulkDelete, onExit } = props;
+  const [selection, setSelection] = useState<number[]>([]);
+  const tasks = taskIds.map((tid) => app.tasks[tid]);
+  return (
+    <Box>
+      <AppBar position="sticky">
+        <Toolbar>
+          <IconButton
+            size="large"
+            edge="start"
+            color="inherit"
+            sx={{ mr: 1 }}
+            onClick={onExit}
+          >
+            <ArrowBackIcon />
+          </IconButton>
+          <Box sx={{ flexGrow: 1 }} />
+          <IconButton
+            disabled={selection.length === 0}
+            onClick={() => {
+              for (const tid of selection) {
+                dispatch({ type: "deleteTask", id: tid });
+              }
+              onBulkDelete();
+            }}
+          >
+            <DeleteIcon />
+          </IconButton>
+        </Toolbar>
+      </AppBar>
+      <List>
+        {tasks.map((task, i) => (
+          <BulkEditListItem
+            key={i}
+            task={task}
+            selected={selection.includes(task.id)}
+            onToggle={(tid, selected) => {
+              const newSelection = selection.filter((t) => t !== tid);
+              if (selected) {
+                newSelection.push(tid);
+              }
+              setSelection(newSelection);
+            }}
+          />
+        ))}
+      </List>
+    </Box>
+  );
+}
+
 function TaskViewItem(props: {
   id: number;
   app: AppState;
   dispatch: (action: Action) => void;
+  onLongPress?: () => any;
 }) {
-  const { id, app, dispatch } = props;
+  const { id, app, dispatch, onLongPress } = props;
   const [infoVisible, setInfoVisible] = useState<Boolean>(false);
   const [historyVisible, setHistoryVisible] = useState<Boolean>(false);
+  const longPressProps = useLongPress(onLongPress ?? (() => {}));
   const task = app.tasks[id];
   const clockedIn = isClockedInTask(app, id);
   const overdue = elapsedTimeTask(app, id) > task.estimate;
@@ -1141,7 +1261,7 @@ function TaskViewItem(props: {
     <Box>
       <ListItem
         secondaryAction={
-          <Box>
+          <React.Fragment>
             <IconButton
               onClick={() => dispatch({ type: "toggleClockTask", id: task.id })}
             >
@@ -1151,11 +1271,12 @@ function TaskViewItem(props: {
             <IconButton onClick={() => setInfoVisible(!infoVisible)}>
               {!infoVisible ? <ArrowDropDownIcon /> : <ArrowDropUpIcon />}
             </IconButton>
-          </Box>
+          </React.Fragment>
         }
       >
         <ListItemText
           onClick={() => navigate(`/tasks/${task.id}`)}
+          {...longPressProps}
           sx={{
             color: clockedIn ? "green" : undefined,
           }}
