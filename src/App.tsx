@@ -47,9 +47,10 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
+import { useDrag } from "@use-gesture/react";
 import { byStartAsc, Fzf } from "fzf";
 import moment from "moment";
-import React, { useEffect, useMemo, useReducer, useState } from "react";
+import React, { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
   Route,
   Routes,
@@ -498,6 +499,10 @@ function AgendaPage(props: {
               app={app}
               dispatch={dispatch}
               onLongPress={() => setMode("edit")}
+              onSwipeLeft={() => {
+                dispatch({ type: "softDeleteTask", id: task.id });
+                setDeletedTasks([task.id]);
+              }}
             />
           </React.Fragment>
         ))}
@@ -529,7 +534,7 @@ function AgendaPage(props: {
           <Button
             color="inherit"
             size="small"
-            onClick={() => {
+            onTouchEnd={() => {
               for (const tid of deletedTasks) {
                 dispatch({ type: "restoreTask", id: tid });
               }
@@ -1170,28 +1175,6 @@ function CompletionViewItem(props: {
   );
 }
 
-function useLongPress(callback = () => {}) {
-  const [startLongPress, setStartLongPress] = useState(false);
-  useEffect(() => {
-    let timerId: NodeJS.Timeout | null = null;
-    if (startLongPress) {
-      timerId = setTimeout(callback, 500);
-    } else {
-      clearTimeout(timerId!);
-    }
-    return () => {
-      clearTimeout(timerId!);
-    };
-  }, [callback, startLongPress]);
-  return {
-    onMouseDown: () => setStartLongPress(true),
-    onMouseUp: () => setStartLongPress(false),
-    onMouseLeave: () => setStartLongPress(false),
-    onTouchStart: () => setStartLongPress(true),
-    onTouchEnd: () => setStartLongPress(false),
-  };
-}
-
 function AgendaBulkEditView(props: {
   app: AppState;
   dispatch: (action: Action) => void;
@@ -1215,7 +1198,7 @@ function AgendaBulkEditView(props: {
         <ListItemIcon>
           {selected ? <CheckIcon /> : <ArticleIcon />}
         </ListItemIcon>
-        <ListItemText primary={task.name} />
+        <ListItemText primary={task.name} sx={{ userSelect: "none" }} />
       </ListItem>
     );
   };
@@ -1274,11 +1257,36 @@ function TaskViewItem(props: {
   app: AppState;
   dispatch: (action: Action) => void;
   onLongPress?: () => any;
+  onSwipeLeft?: () => any;
 }) {
-  const { id, app, dispatch, onLongPress } = props;
+  const { id, app, dispatch, onLongPress, onSwipeLeft } = props;
   const [infoVisible, setInfoVisible] = useState<Boolean>(false);
   const [historyVisible, setHistoryVisible] = useState<Boolean>(false);
-  const longPressProps = useLongPress(onLongPress ?? (() => {}));
+  const timerId = useRef<NodeJS.Timeout | null>(null);
+  const bind = useDrag(
+    ({ first, last, distance: [dx, dy], swipe: [sx, _sy] }) => {
+      if (first && onLongPress) {
+        timerId.current = setTimeout(onLongPress, 650);
+      }
+      if (last && timerId.current) {
+        clearTimeout(timerId.current);
+        timerId.current = null;
+      }
+      if (dx + dy > 10 && timerId.current) {
+        clearTimeout(timerId.current);
+        timerId.current = null;
+      }
+      if (sx) {
+        if (timerId.current) {
+          clearTimeout(timerId.current);
+          timerId.current = null;
+        }
+        if (sx < 0 && onSwipeLeft) {
+          onSwipeLeft();
+        }
+      }
+    }
+  );
   const task = app.tasks[id];
   const clockedIn = isClockedInTask(app, id);
   const overdue = elapsedTimeTask(app, id) > task.estimate;
@@ -1302,9 +1310,11 @@ function TaskViewItem(props: {
       >
         <ListItemText
           onClick={() => navigate(`/tasks/${task.id}`)}
-          {...longPressProps}
+          {...bind()}
           sx={{
             color: clockedIn ? "green" : undefined,
+            touchAction: "none",
+            userSelect: "none",
           }}
         >
           {task.name}
