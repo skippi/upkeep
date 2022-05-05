@@ -47,6 +47,7 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
+import { animated, useSpring } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
 import { byStartAsc, Fzf } from "fzf";
 import moment from "moment";
@@ -1262,9 +1263,17 @@ function TaskViewItem(props: {
   const { id, app, dispatch, onLongPress, onSwipeLeft } = props;
   const [infoVisible, setInfoVisible] = useState<Boolean>(false);
   const [historyVisible, setHistoryVisible] = useState<Boolean>(false);
+  const [style, api] = useSpring(() => ({ x: 0 }));
   const timerId = useRef<NodeJS.Timeout | null>(null);
   const bind = useDrag(
-    ({ first, last, distance: [dx, dy], swipe: [sx, _sy] }) => {
+    ({
+      first,
+      last,
+      active,
+      distance: [dx, dy],
+      movement: [mx, _my],
+      swipe: [sx, _sy],
+    }) => {
       if (first && onLongPress) {
         timerId.current = setTimeout(onLongPress, 650);
       }
@@ -1285,15 +1294,21 @@ function TaskViewItem(props: {
           onSwipeLeft();
         }
       }
+      api.start({
+        x: active ? Math.min(Math.max(mx, -65), 65) : 0,
+        immediate: active,
+      });
     }
   );
   const task = app.tasks[id];
   const clockedIn = isClockedInTask(app, id);
   const overdue = elapsedTimeTask(app, id) > task.estimate;
   const navigate = useNavigate();
+  const AnimatedListItem = animated(ListItem);
   return (
     <Box>
-      <ListItem
+      <AnimatedListItem
+        style={style}
         secondaryAction={
           <React.Fragment>
             <IconButton
@@ -1313,13 +1328,13 @@ function TaskViewItem(props: {
           {...bind()}
           sx={{
             color: clockedIn ? "green" : undefined,
-            touchAction: "none",
+            touchAction: "pan-y",
             userSelect: "none",
           }}
         >
           {task.name}
         </ListItemText>
-      </ListItem>
+      </AnimatedListItem>
       {infoVisible && (
         <Box component="li">
           <Box>
