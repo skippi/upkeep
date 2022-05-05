@@ -16,6 +16,7 @@ export type RepeatDuration = [number, "days" | "weeks" | "months"]
 export interface Task {
   id: number;
   completions: number[];
+  deleted: boolean;
   estimate: number;
   name: string;
   notes: string;
@@ -41,6 +42,8 @@ export type Action =
   | CreateTaskAction
   | EditTaskAction
   | ToggleClockTaskAction
+  | SoftDeleteTaskAction
+  | RestoreTaskAction
   | DeleteTaskAction
   | EditCompletionNotesAction
   | RefreshAction
@@ -53,6 +56,16 @@ interface SelectAgendaDate {
 
 interface CloseTaskAction {
   type: "closeTask";
+  id: number;
+}
+
+interface SoftDeleteTaskAction {
+  type: "softDeleteTask";
+  id: number;
+}
+
+interface RestoreTaskAction {
+  type: "restoreTask";
   id: number;
 }
 
@@ -135,6 +148,7 @@ export const appReducer = produce((draft: Draft<AppState>, action: Action) => {
     const initialTask: Task = {
       id: id,
       completions: [],
+      deleted: false,
       estimate: 0,
       name: "",
       notes: "",
@@ -175,6 +189,10 @@ export const appReducer = produce((draft: Draft<AppState>, action: Action) => {
     draft.touched = new Date();
   } else if (action.type === "selectAgendaDate") {
     draft.ui.agendaDate = action.date;
+  } else if (action.type === "softDeleteTask") {
+    draft.tasks[action.id].deleted = true;
+  } else if (action.type === "restoreTask") {
+    draft.tasks[action.id].deleted = false;
   }
 });
 

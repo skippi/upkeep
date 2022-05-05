@@ -42,6 +42,7 @@ import {
   ListItemText,
   Paper,
   Popover,
+  Snackbar,
   TextField,
   Toolbar,
   Typography,
@@ -389,6 +390,7 @@ function AgendaPage(props: {
     null
   );
   const [mode, setMode] = useState<"view" | "edit">("view");
+  const [deletedTasks, setDeletedTasks] = useState<number[]>([]);
   const navigate = useNavigate();
   const { app, dispatch } = props;
   const date = app.ui.agendaDate;
@@ -408,9 +410,9 @@ function AgendaPage(props: {
     setAssistItems(items);
   }, [date, app.tasks]);
   useInterval(() => dispatch({ type: "refresh" }), 1000);
-  const tasks = Object.values(app.tasks).filter((task) =>
-    moment(task.scheduleDate).isSame(moment(date), "date")
-  );
+  const tasks = Object.values(app.tasks)
+    .filter((task) => !task.deleted)
+    .filter((task) => moment(task.scheduleDate).isSame(moment(date), "date"));
   if (mode === "edit") {
     return (
       <AgendaBulkEditView
@@ -418,7 +420,10 @@ function AgendaPage(props: {
         dispatch={dispatch}
         taskIds={tasks.map((t) => t.id)}
         onExit={() => setMode("view")}
-        onBulkDelete={() => setMode("view")}
+        onBulkDelete={(deletedIds) => {
+          setDeletedTasks(deletedIds);
+          setMode("view");
+        }}
       />
     );
   }
@@ -515,6 +520,27 @@ function AgendaPage(props: {
       >
         <AddIcon />
       </Fab>
+      <Snackbar
+        open={deletedTasks.length !== 0}
+        autoHideDuration={6000}
+        message={`${deletedTasks.length} tasks deleted`}
+        onClose={() => setDeletedTasks([])}
+        action={
+          <Button
+            color="inherit"
+            size="small"
+            onClick={() => {
+              for (const tid of deletedTasks) {
+                dispatch({ type: "restoreTask", id: tid });
+              }
+              setDeletedTasks([]);
+            }}
+          >
+            Undo
+          </Button>
+        }
+        sx={{ bottom: { xs: 140, sm: 0 } }}
+      />
       <AgendaBottomNavigation />
     </React.Fragment>
   );
@@ -1170,7 +1196,7 @@ function AgendaBulkEditView(props: {
   app: AppState;
   dispatch: (action: Action) => void;
   taskIds: number[];
-  onBulkDelete: () => any;
+  onBulkDelete: (deletedIds: number[]) => any;
   onExit: () => any;
 }) {
   const BulkEditListItem = (props: {
@@ -1214,9 +1240,9 @@ function AgendaBulkEditView(props: {
             disabled={selection.length === 0}
             onClick={() => {
               for (const tid of selection) {
-                dispatch({ type: "deleteTask", id: tid });
+                dispatch({ type: "softDeleteTask", id: tid });
               }
-              onBulkDelete();
+              onBulkDelete(selection);
             }}
           >
             <DeleteIcon />
