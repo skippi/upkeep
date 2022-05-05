@@ -1326,14 +1326,18 @@ function TaskViewItem(props: {
         <ListItemText
           onClick={() => navigate(`/tasks/${task.id}`)}
           {...bind()}
+          primary={task.name}
+          secondary={`${moment
+            .utc(totalTimeTask(app, task.id))
+            .format("m:ss")}`.concat(
+            task.estimate ? `/${moment.utc(task.estimate).format("m:ss")}` : ""
+          )}
           sx={{
             color: clockedIn ? "green" : undefined,
             touchAction: "pan-y",
             userSelect: "none",
           }}
-        >
-          {task.name}
-        </ListItemText>
+        />
       </AnimatedListItem>
       {infoVisible && (
         <Box component="li">
