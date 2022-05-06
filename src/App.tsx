@@ -197,7 +197,7 @@ function TaskListPage(props: {
         color="primary"
         aria-label="add"
         sx={{
-          position: "absolute",
+          position: "fixed",
           bottom: 16,
           right: 16,
         }}
@@ -558,7 +558,7 @@ function AgendaPage(props: {
         color="primary"
         aria-label="add"
         sx={{
-          position: "absolute",
+          position: "fixed",
           bottom: 16 + 56,
           right: 16,
         }}
