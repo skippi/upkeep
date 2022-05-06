@@ -11,7 +11,7 @@ export interface AppState {
   touched: Date;
 }
 
-export type RepeatDuration = [number, "days" | "weeks" | "months"]
+export type RepeatDuration = [number, "days" | "weeks" | "months"];
 
 export interface Task {
   id: number;
@@ -137,11 +137,15 @@ export const appReducer = produce((draft: Draft<AppState>, action: Action) => {
     draft.completions[completion.id] = completion;
     const task = draft.tasks[action.id];
     task.completions.push(completion.id);
-    if (task.repeat[0]) {
-      task.scheduleDate = moment(task.scheduleDate ?? new Date())
-        .startOf("day")
-        .add(task.repeat[0], task.repeat[1])
-        .toDate();
+    if (task.scheduleDate !== null) {
+      if (task.repeat[0]) {
+        task.scheduleDate = moment(task.scheduleDate ?? new Date())
+          .startOf("day")
+          .add(task.repeat[0], task.repeat[1])
+          .toDate();
+      } else {
+        task.scheduleDate = null;
+      }
     }
     clockOutTask(draft, action.id);
   } else if (action.type === "createTask") {
