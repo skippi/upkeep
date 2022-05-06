@@ -61,7 +61,7 @@ import {
   useNavigate,
   useParams,
 } from "react-router-dom";
-import { useEventListener, useInterval } from "usehooks-ts";
+import { useEffectOnce, useEventListener, useInterval } from "usehooks-ts";
 import "./App.css";
 import {
   Action,
@@ -1114,6 +1114,11 @@ function App() {
   useEffect(() => {
     localStorage.setItem("app", JSON.stringify(app));
   }, [app, location]);
+  useEffectOnce(() => {
+    if (moment().diff(moment(app.touched), "hours") >= 4) {
+      dispatch({ type: "selectAgendaDate", date: new Date() });
+    }
+  });
   useEventListener("contextmenu", (event) => event.preventDefault());
   return (
     <Paper sx={{ minHeight: "100vh" }}>
