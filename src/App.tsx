@@ -1147,6 +1147,12 @@ function App() {
       dispatch({ type: "selectAgendaDate", date: new Date() });
     }
   });
+  useEventListener("storage", () => {
+    const storedApp = loadLocalState();
+    if (storedApp === null) return;
+    if (!moment(storedApp.touched).isAfter(moment(app.touched))) return;
+    dispatch({ type: "setApp", app: storedApp });
+  });
   useEventListener("contextmenu", (event) => event.preventDefault());
   return (
     <Paper sx={{ minHeight: "100vh" }}>

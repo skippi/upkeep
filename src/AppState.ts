@@ -44,6 +44,7 @@ export type Action =
   | ToggleClockTaskAction
   | SoftDeleteTaskAction
   | RestoreTaskAction
+  | SetAppAction
   | DeleteTaskAction
   | EditCompletionNotesAction
   | SelectAgendaDate;
@@ -66,6 +67,11 @@ interface SoftDeleteTaskAction {
 interface RestoreTaskAction {
   type: "restoreTask";
   id: number;
+}
+
+interface SetAppAction {
+  type: "setApp";
+  app: AppState;
 }
 
 interface DeleteTaskAction {
@@ -186,6 +192,8 @@ export const appReducer = produce((draft: Draft<AppState>, action: Action) => {
     draft.tasks[action.id].deleted = true;
   } else if (action.type === "restoreTask") {
     draft.tasks[action.id].deleted = false;
+  } else if (action.type === "setApp") {
+    return action.app;
   }
   draft.touched = new Date();
 });
