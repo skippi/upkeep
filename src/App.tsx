@@ -125,7 +125,7 @@ function MainNavBar(props: { title?: string; children?: React.ReactNode }) {
               sx={{ flexGrow: 1 }}
               onClick={() => navigate("/")}
             >
-              time-app
+              upkeep
             </Typography>
           </Toolbar>
           <Divider />
