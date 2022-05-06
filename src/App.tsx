@@ -163,7 +163,8 @@ function TaskListPage(props: {
 }) {
   const navigate = useNavigate();
   const { app, dispatch } = props;
-  useInterval(() => dispatch({ type: "refresh" }), 1000);
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
+  useInterval(forceUpdate, 1000);
   const [sortedIds, setSortedIds] = useState<number[]>([]);
   const tasks: Task[] = [];
   if (sortedIds.length === 0) {
@@ -419,7 +420,8 @@ function AgendaPage(props: {
     }
     setAssistItems(items);
   }, [date, app.tasks]);
-  useInterval(() => dispatch({ type: "refresh" }), 1000);
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
+  useInterval(forceUpdate, 1000);
   const tasks = Object.values(app.tasks)
     .filter((task) => !task.deleted && task.scheduleDate)
     .filter((task) => {
@@ -594,7 +596,8 @@ function AgendaAnalyticsPage(props: {
   const [openDate, setOpenDate] = useState<boolean>(false);
   const { app, dispatch } = props;
   const date = app.ui.agendaDate;
-  useInterval(() => dispatch({ type: "refresh" }), 1000);
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
+  useInterval(forceUpdate, 1000);
   const viewItems = Object.values(app.tasks)
     .filter((task) => task.sessions.length)
     .map((task) => {

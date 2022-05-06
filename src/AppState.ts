@@ -46,7 +46,6 @@ export type Action =
   | RestoreTaskAction
   | DeleteTaskAction
   | EditCompletionNotesAction
-  | RefreshAction
   | SelectAgendaDate;
 
 interface SelectAgendaDate {
@@ -110,10 +109,6 @@ interface EditCompletionNotesAction {
   type: "editCompletionNotes";
   id: number;
   value: string;
-}
-
-interface RefreshAction {
-  type: "refresh";
 }
 
 export const initialState: AppState = {
@@ -185,8 +180,6 @@ export const appReducer = produce((draft: Draft<AppState>, action: Action) => {
     delete draft.tasks[action.id];
   } else if (action.type === "editCompletionNotes") {
     draft.completions[action.id].notes = action.value;
-  } else if (action.type === "refresh") {
-    draft.touched = new Date();
   } else if (action.type === "selectAgendaDate") {
     draft.ui.agendaDate = action.date;
   } else if (action.type === "softDeleteTask") {
@@ -194,6 +187,7 @@ export const appReducer = produce((draft: Draft<AppState>, action: Action) => {
   } else if (action.type === "restoreTask") {
     draft.tasks[action.id].deleted = false;
   }
+  draft.touched = new Date();
 });
 
 function generateId() {
