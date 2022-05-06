@@ -797,10 +797,13 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
   );
 }
 
-function TaskDetailPage(props: { app: AppState }) {
+function TaskDetailPage(props: {
+  app: AppState;
+  dispatch: (action: Action) => void;
+}) {
   const [task, setTask] = useState<Task | null>(null);
   const { id } = useParams<"id">();
-  const { app } = props;
+  const { app, dispatch } = props;
   useEventListener("keydown", (event: KeyboardEvent) => {
     if (event.key === "Escape") navigate(-1);
   });
@@ -841,6 +844,16 @@ function TaskDetailPage(props: { app: AppState }) {
             onClick={() => navigate(`/tasks/${id}/edit`)}
           >
             <EditIcon />
+          </IconButton>
+          <IconButton
+            size="large"
+            color="inherit"
+            onClick={() => {
+              dispatch({ type: "softDeleteTask", id: task.id });
+              navigate(-1);
+            }}
+          >
+            <DeleteIcon />
           </IconButton>
         </Toolbar>
       </AppBar>
@@ -1178,7 +1191,10 @@ function App() {
           path="/tasks/create"
           element={<CreateTask dispatch={dispatch} />}
         />
-        <Route path="/tasks/:id/" element={<TaskDetailPage app={app} />} />
+        <Route
+          path="/tasks/:id/"
+          element={<TaskDetailPage app={app} dispatch={dispatch} />}
+        />
         <Route
           path="/tasks/:id/completions"
           element={<TaskCompletionListPage app={app} />}
