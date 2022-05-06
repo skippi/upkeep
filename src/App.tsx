@@ -415,13 +415,22 @@ function AgendaPage(props: {
   }, [date, app.tasks]);
   useInterval(() => dispatch({ type: "refresh" }), 1000);
   const tasks = Object.values(app.tasks)
-    .filter((task) => !task.deleted)
-    .filter(
-      (task) =>
-        moment(task.scheduleDate).isSame(moment(date), "date") ||
-        (moment(app.ui.agendaDate).isSame(moment(), "date") &&
-          moment(task.scheduleDate).isBefore(moment(date), "date"))
-    );
+    .filter((task) => !task.deleted && task.scheduleDate)
+    .filter((task) => {
+      let iterDate = moment(task.scheduleDate);
+      if (task.repeat[0]) {
+        while (iterDate.isBefore(moment(date), "day")) {
+          iterDate = iterDate.add(...task.repeat);
+        }
+      }
+      if (iterDate.isSame(date, "day")) {
+        return true;
+      }
+      return (
+        moment(app.ui.agendaDate).isSame(moment(), "date") &&
+        moment(task.scheduleDate).isBefore(moment(date), "date")
+      );
+    });
   if (mode === "edit") {
     return (
       <AgendaBulkEditView
@@ -1330,17 +1339,17 @@ function TaskViewItem(props: {
   const overdue = elapsedTimeTask(app, id) > task.estimate;
   const navigate = useNavigate();
   const AnimatedListItem = animated(ListItem);
-  const timeSpent = totalTimeTask(app, task.id);
-  const daysOverdue = moment(app.ui.agendaDate).diff(
-    moment(task.scheduleDate),
-    "days"
-  );
   const secondaryString = (() => {
+    const timeSpent = totalTimeTask(app, task.id);
     let result = moment.utc(timeSpent).format("m:ss");
     if (task.estimate) {
       result += `/${moment.utc(task.estimate).format("m:ss")}`;
     }
-    if (daysOverdue > 0) {
+    const daysOverdue = moment(app.ui.agendaDate).diff(
+      moment(task.scheduleDate),
+      "days"
+    );
+    if (moment().isSame(app.ui.agendaDate, "days") && daysOverdue > 0) {
       result += ` [ -${daysOverdue} days ]`;
     }
     return result;
