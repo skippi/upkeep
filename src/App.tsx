@@ -166,6 +166,7 @@ function TaskListPage(props: {
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
   useInterval(forceUpdate, 1000);
   const [sortedIds, setSortedIds] = useState<number[]>([]);
+  const [closedTaskName, setClosedTaskName] = useState<string>("");
   const tasks: Task[] = [];
   if (sortedIds.length === 0) {
     tasks.push(...Object.values(app.tasks));
@@ -174,7 +175,7 @@ function TaskListPage(props: {
     tasks.push(...sortedIds.map((tid) => app.tasks[tid]));
   }
   return (
-    <Box>
+    <React.Fragment>
       <MainNavBar title="Tasks" />
       <Box>
         <InputBase
@@ -210,11 +211,26 @@ function TaskListPage(props: {
         {tasks.map((task, i) => (
           <Box key={task.id}>
             {i !== 0 && <Divider component="li" />}
-            <TaskViewItem id={task.id} app={app} dispatch={dispatch} />
+            <TaskViewItem
+              id={task.id}
+              app={app}
+              dispatch={dispatch}
+              onSwipeLeft={() => {
+                dispatch({ type: "softDeleteTask", id: task.id });
+                setClosedTaskName(task.name);
+              }}
+            />
           </Box>
         ))}
       </List>
-    </Box>
+      <Snackbar
+        open={closedTaskName.length > 0}
+        autoHideDuration={6000}
+        message={`Closed task "${closedTaskName}"`}
+        onClose={() => setClosedTaskName("")}
+        sx={{ bottom: { xs: 140, sm: 0 } }}
+      />
+    </React.Fragment>
   );
 }
 
@@ -389,6 +405,7 @@ function AgendaPage(props: {
   );
   const [mode, setMode] = useState<"view" | "edit">("view");
   const [deletedTasks, setDeletedTasks] = useState<number[]>([]);
+  const [closedTaskName, setClosedTaskName] = useState<string>("");
   const bind = useDrag(({ swipe: [sx, _sy] }) => {
     if (sx < 0) {
       dispatch({
@@ -538,8 +555,8 @@ function AgendaPage(props: {
               dispatch={dispatch}
               onLongPress={() => setMode("edit")}
               onSwipeLeft={() => {
-                dispatch({ type: "softDeleteTask", id: task.id });
-                setDeletedTasks([task.id]);
+                dispatch({ type: "closeTask", id: task.id });
+                setClosedTaskName(task.name);
               }}
             />
           </React.Fragment>
@@ -563,6 +580,13 @@ function AgendaPage(props: {
       >
         <AddIcon />
       </Fab>
+      <Snackbar
+        open={closedTaskName.length > 0}
+        autoHideDuration={6000}
+        message={`Closed task "${closedTaskName}"`}
+        onClose={() => setClosedTaskName("")}
+        sx={{ bottom: { xs: 140, sm: 0 } }}
+      />
       <Snackbar
         open={deletedTasks.length !== 0}
         autoHideDuration={6000}
@@ -1325,7 +1349,10 @@ function TaskViewItem(props: {
   const { id, app, dispatch, onLongPress, onSwipeLeft } = props;
   const [infoVisible, setInfoVisible] = useState<Boolean>(false);
   const [historyVisible, setHistoryVisible] = useState<Boolean>(false);
-  const [style, api] = useSpring(() => ({ x: 0 }));
+  const [style, api] = useSpring(() => ({
+    from: { x: 0 },
+    config: { mass: 0.25, tension: 300 },
+  }));
   const timerId = useRef<NodeJS.Timeout | null>(null);
   const bind = useDrag(
     ({
