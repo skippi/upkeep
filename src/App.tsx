@@ -87,12 +87,12 @@ function msToHHMMSS(milliseconds: number) {
   return `${padZeroes(hours)}:${padZeroes(minutes)}:${padZeroes(seconds)}`;
 }
 
-function MainNavBar(props: { title?: string; titleNode?: React.ReactNode }) {
+function MainNavBar(props: { title?: string; children?: React.ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
-  const { title, titleNode } = props;
   const navigate = useNavigate();
+  const { title, children } = props;
   return (
-    <Box>
+    <React.Fragment>
       <AppBar position="sticky">
         <Toolbar>
           <IconButton
@@ -109,22 +109,22 @@ function MainNavBar(props: { title?: string; titleNode?: React.ReactNode }) {
               {title}
             </Typography>
           )}
-          {titleNode}
+          {children}
         </Toolbar>
       </AppBar>
       <Drawer
         anchor="left"
         open={drawerOpen}
-        onClose={() => setDrawerOpen(!drawerOpen)}
+        onClose={() => setDrawerOpen(false)}
       >
-        <Box
-          sx={{ width: 250 }}
-          role="presentation"
-          onClick={() => setDrawerOpen(false)}
-          onKeyDown={() => setDrawerOpen(false)}
-        >
+        <Box sx={{ width: 250 }} role="presentation">
           <Toolbar>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            <Typography
+              variant="h6"
+              component="div"
+              sx={{ flexGrow: 1 }}
+              onClick={() => navigate("/")}
+            >
               time-app
             </Typography>
           </Toolbar>
@@ -153,7 +153,7 @@ function MainNavBar(props: { title?: string; titleNode?: React.ReactNode }) {
           </List>
         </Box>
       </Drawer>
-    </Box>
+    </React.Fragment>
   );
 }
 
@@ -311,34 +311,27 @@ function TimelinePage(props: {
   );
   return (
     <React.Fragment>
-      <MainNavBar
-        titleNode={
-          <React.Fragment>
-            <Typography sx={{ flexGrow: 1 }} variant="h6" component="span">
-              {moment(date).format("MMM DD")}
-              <IconButton
-                edge="start"
-                sx={{ padding: 0, marginLeft: 0 }}
-                onClick={() => setOpenDate(!openDate)}
-              >
-                <ArrowDropDownIcon />
-              </IconButton>
-              <DatePicker
-                value={date}
-                open={openDate}
-                onChange={(newDate) =>
-                  dispatch({
-                    type: "selectAgendaDate",
-                    date: newDate ?? new Date(),
-                  })
-                }
-                onClose={() => setOpenDate(false)}
-                renderInput={() => <div></div>}
-              />
-            </Typography>
-          </React.Fragment>
-        }
-      />
+      <MainNavBar title={moment(date).format("MMM DD")}>
+        <IconButton
+          edge="start"
+          sx={{ padding: 0, marginLeft: 0 }}
+          onClick={() => setOpenDate(!openDate)}
+        >
+          <ArrowDropDownIcon />
+        </IconButton>
+        <DatePicker
+          value={date}
+          open={openDate}
+          onChange={(newDate) =>
+            dispatch({
+              type: "selectAgendaDate",
+              date: newDate ?? new Date(),
+            })
+          }
+          onClose={() => setOpenDate(false)}
+          renderInput={() => <div></div>}
+        />
+      </MainNavBar>
       {Object.values(viewSessions).map(([session, task]) => (
         <Box key={JSON.stringify(["session", task.id, session.id])}>
           {moment(session.start).format("HH:mm")}-
@@ -460,83 +453,79 @@ function AgendaPage(props: {
   }
   return (
     <React.Fragment>
-      <MainNavBar
-        titleNode={
-          <React.Fragment>
-            <Typography
-              sx={{ flexGrow: 1, touchAction: "pan-y", userSelect: "none" }}
-              {...bind()}
-              variant="h6"
-              component="span"
-            >
-              {moment(date).format("MMM DD")}
-              <IconButton
-                edge="start"
-                sx={{ padding: 0, marginLeft: 0 }}
-                onClick={() => setOpenDate(!openDate)}
-              >
-                <ArrowDropDownIcon />
-              </IconButton>
-              <DatePicker
-                value={date}
-                open={openDate}
-                onChange={(newDate) =>
-                  dispatch({
-                    type: "selectAgendaDate",
-                    date: newDate ?? new Date(),
-                  })
-                }
-                onClose={() => setOpenDate(false)}
-                renderInput={() => <div></div>}
-              />
-            </Typography>
-            <IconButton
-              color="inherit"
-              disabled={moment(date).isSame(moment(), "days")}
-              onClick={() =>
-                dispatch({
-                  type: "selectAgendaDate",
-                  date: new Date(),
-                })
-              }
-            >
-              <TodayIcon />
-            </IconButton>
-            <IconButton
-              color="inherit"
-              onClick={(e) => {
-                if (assistItems.length === 0) return;
-                setAssistAnchor(e.currentTarget);
-              }}
-            >
-              <Badge color="secondary" badgeContent={assistItems.length}>
-                <AssistantOutlinedIcon />
-              </Badge>
-            </IconButton>
-            <Popover
-              open={!!assistAnchor}
-              anchorEl={assistAnchor}
-              onClose={() => setAssistAnchor(null)}
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "right",
-              }}
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "right",
-              }}
-            >
-              <List>
-                <ListItem>
-                  {assistItems.map((item, i) => (
-                    <ListItemText key={i}>{item}</ListItemText>
-                  ))}
-                </ListItem>
-              </List>
-            </Popover>
-          </React.Fragment>
-        }
-      />
+      <MainNavBar>
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{ flexGrow: 1, touchAction: "pan-y", userSelect: "none" }}
+          {...bind()}
+        >
+          {moment(date).format("MMM DD")}
+          <IconButton
+            edge="start"
+            sx={{ padding: 0, marginLeft: 0 }}
+            onClick={() => setOpenDate(!openDate)}
+          >
+            <ArrowDropDownIcon />
+          </IconButton>
+          <DatePicker
+            value={date}
+            open={openDate}
+            onChange={(newDate) =>
+              dispatch({
+                type: "selectAgendaDate",
+                date: newDate ?? new Date(),
+              })
+            }
+            onClose={() => setOpenDate(false)}
+            renderInput={() => <div></div>}
+          />
+        </Typography>
+        <IconButton
+          color="inherit"
+          disabled={moment(date).isSame(moment(), "days")}
+          onClick={() =>
+            dispatch({
+              type: "selectAgendaDate",
+              date: new Date(),
+            })
+          }
+        >
+          <TodayIcon />
+        </IconButton>
+        <IconButton
+          color="inherit"
+          onClick={(e) => {
+            if (assistItems.length === 0) return;
+            setAssistAnchor(e.currentTarget);
+          }}
+        >
+          <Badge color="secondary" badgeContent={assistItems.length}>
+            <AssistantOutlinedIcon />
+          </Badge>
+        </IconButton>
+        <Popover
+          open={!!assistAnchor}
+          anchorEl={assistAnchor}
+          onClose={() => setAssistAnchor(null)}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "right",
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "right",
+          }}
+        >
+          <List>
+            <ListItem>
+              {assistItems.map((item, i) => (
+                <ListItemText key={i}>{item}</ListItemText>
+              ))}
+            </ListItem>
+          </List>
+        </Popover>
+      </MainNavBar>
       <List>
         {tasks.map((task, i) => (
           <React.Fragment key={task.id}>
@@ -626,34 +615,30 @@ function AgendaAnalyticsPage(props: {
   viewItems.sort((a, b) => b.timeSpent - a.timeSpent);
   return (
     <React.Fragment>
-      <MainNavBar
-        titleNode={
-          <React.Fragment>
-            <Typography sx={{ flexGrow: 1 }} variant="h6" component="span">
-              {moment(date).format("MMM DD")}
-              <IconButton
-                edge="start"
-                sx={{ padding: 0, marginLeft: 0 }}
-                onClick={() => setOpenDate(!openDate)}
-              >
-                <ArrowDropDownIcon />
-              </IconButton>
-              <DatePicker
-                value={date}
-                open={openDate}
-                onChange={(newDate) =>
-                  dispatch({
-                    type: "selectAgendaDate",
-                    date: newDate ?? new Date(),
-                  })
-                }
-                onClose={() => setOpenDate(false)}
-                renderInput={() => <div></div>}
-              />
-            </Typography>
-          </React.Fragment>
-        }
-      />
+      <MainNavBar>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          {moment(date).format("MMM DD")}
+          <IconButton
+            edge="start"
+            sx={{ padding: 0, marginLeft: 0 }}
+            onClick={() => setOpenDate(!openDate)}
+          >
+            <ArrowDropDownIcon />
+          </IconButton>
+          <DatePicker
+            value={date}
+            open={openDate}
+            onChange={(newDate) =>
+              dispatch({
+                type: "selectAgendaDate",
+                date: newDate ?? new Date(),
+              })
+            }
+            onClose={() => setOpenDate(false)}
+            renderInput={() => <div></div>}
+          />
+        </Typography>
+      </MainNavBar>
       {viewItems.map((item, i) => (
         <Box key={i}>
           {item.name} {moment.utc(item.timeSpent).format("HH:mm:ss")}{" "}
