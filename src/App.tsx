@@ -19,6 +19,7 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import RepeatIcon from "@mui/icons-material/Repeat";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import TimerIcon from "@mui/icons-material/Timer";
+import TodayIcon from "@mui/icons-material/Today";
 import ViewAgendaOutlinedIcon from "@mui/icons-material/ViewAgendaOutlined";
 import { DatePicker, MobileDateTimePicker } from "@mui/lab";
 import {
@@ -462,6 +463,18 @@ function AgendaPage(props: {
                 renderInput={() => <div></div>}
               />
             </Typography>
+            <IconButton
+              color="inherit"
+              disabled={moment(date).isSame(moment(), "days")}
+              onClick={() =>
+                dispatch({
+                  type: "selectAgendaDate",
+                  date: new Date(),
+                })
+              }
+            >
+              <TodayIcon />
+            </IconButton>
             <IconButton
               color="inherit"
               onClick={(e) => {
