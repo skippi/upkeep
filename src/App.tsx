@@ -395,6 +395,19 @@ function AgendaPage(props: {
   );
   const [mode, setMode] = useState<"view" | "edit">("view");
   const [deletedTasks, setDeletedTasks] = useState<number[]>([]);
+  const bind = useDrag(({ swipe: [sx, _sy] }) => {
+    if (sx < 0) {
+      dispatch({
+        type: "selectAgendaDate",
+        date: moment(date).add(1, "days").toDate(),
+      });
+    } else if (sx > 0) {
+      dispatch({
+        type: "selectAgendaDate",
+        date: moment(date).subtract(1, "days").toDate(),
+      });
+    }
+  });
   const navigate = useNavigate();
   const { app, dispatch } = props;
   const date = app.ui.agendaDate;
@@ -450,7 +463,12 @@ function AgendaPage(props: {
       <MainNavBar
         titleNode={
           <React.Fragment>
-            <Typography sx={{ flexGrow: 1 }} variant="h6" component="span">
+            <Typography
+              sx={{ flexGrow: 1, touchAction: "pan-y", userSelect: "none" }}
+              {...bind()}
+              variant="h6"
+              component="span"
+            >
               {moment(date).format("MMM DD")}
               <IconButton
                 edge="start"
