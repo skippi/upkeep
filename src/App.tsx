@@ -984,13 +984,11 @@ function EditTask(props: {
       type: "editTask",
       id: parseInt(id!, 10),
       props: {
-        completions: [],
         estimate: estimate ?? 0,
         name: name,
         notes: notes,
         repeat: repeat,
         scheduleDate: scheduleDate,
-        sessions: [],
       },
     });
     navigate(-1);
