@@ -5,7 +5,7 @@ import App from "./App";
 import { ThemeProvider } from "@emotion/react";
 import { HashRouter } from "react-router-dom";
 import { LocalizationProvider } from "@mui/lab";
-import AdapterMoment from '@mui/lab/AdapterMoment'
+import AdapterMoment from "@mui/lab/AdapterMoment";
 import { createTheme } from "@mui/material/styles";
 import reportWebVitals from "./reportWebVitals";
 

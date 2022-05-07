@@ -78,6 +78,7 @@ import {
   Task,
   totalTimeTask,
 } from "./AppState";
+import logo from "./logo.png";
 
 function msToHHMMSS(milliseconds: number) {
   const seconds = Math.floor((milliseconds / 1000) % 60);
@@ -119,13 +120,26 @@ function MainNavBar(props: { title?: string; children?: React.ReactNode }) {
       >
         <Box sx={{ width: 250 }} role="presentation">
           <Toolbar>
+            <img
+              src={logo}
+              alt="Logo"
+              width="48"
+              height="48"
+              style={{ marginRight: "0.8rem" }}
+            />
             <Typography
               variant="h6"
               component="div"
-              sx={{ flexGrow: 1 }}
+              sx={{
+                color: "#43C59E",
+                fontFamily: "Montserrat,Roboto",
+                letterSpacing: "0.58rem",
+                marginTop: "0.1rem",
+                flexGrow: 1,
+              }}
               onClick={() => navigate("/")}
             >
-              upkeep
+              UPKEEP
             </Typography>
           </Toolbar>
           <Divider />
@@ -1190,7 +1204,10 @@ function App() {
     if (!moment(storedApp.touched).isAfter(moment(app.touched))) return;
     dispatch({ type: "setApp", app: storedApp });
   });
-  useEventListener("contextmenu", (event) => event.preventDefault());
+  useEventListener("contextmenu", (event) => {
+    if (process.env.NODE_ENV !== 'production') return;
+    event.preventDefault();
+  });
   return (
     <Paper sx={{ minHeight: "100vh" }}>
       <CssBaseline />
