@@ -877,7 +877,6 @@ function TaskDetailPage(props: {
           <Box sx={{ flexGrow: 1 }} />
           <IconButton
             size="large"
-            edge="end"
             color="inherit"
             onClick={() => navigate(`/tasks/${id}/edit`)}
           >
@@ -886,6 +885,7 @@ function TaskDetailPage(props: {
           <IconButton
             size="large"
             color="inherit"
+            edge="end"
             onClick={() => {
               dispatch({ type: "softDeleteTask", id: task.id });
               navigate(-1);
