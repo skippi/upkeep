@@ -1412,7 +1412,7 @@ function TaskViewItem(props: {
   const navigate = useNavigate();
   const AnimatedListItem = animated(ListItem);
   const secondaryString = (() => {
-    const timeSpent = totalTimeTask(app, task.id);
+    const timeSpent = elapsedTimeTask(app, task.id);
     let result = moment.utc(timeSpent).format("m:ss");
     if (task.estimate) {
       result += `/${moment.utc(task.estimate).format("m:ss")}`;
