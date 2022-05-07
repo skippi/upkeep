@@ -1427,7 +1427,7 @@ function TaskViewItem(props: {
   return (
     <Box>
       <AnimatedListItem
-        style={style}
+        style={{...style, overflow: "hidden"}}
         secondaryAction={
           <React.Fragment>
             <IconButton
