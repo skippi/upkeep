@@ -34,7 +34,6 @@ import {
   Divider,
   Drawer,
   Fab,
-  Icon,
   IconButton,
   InputBase,
   List,
@@ -770,9 +769,9 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
         </ListItem>
         <Divider component="li" />
         <ListItem>
-          <Icon sx={{ paddingRight: "16px" }}>
+          <ListItemIcon sx={{ marginRight: "-10px" }}>
             <NotesIcon />
-          </Icon>
+          </ListItemIcon>
           <TextField
             multiline
             placeholder="Notes"
@@ -782,9 +781,9 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
           />
         </ListItem>
         <ListItem>
-          <Icon sx={{ paddingRight: "16px" }}>
+          <ListItemIcon sx={{ marginRight: "-10px" }}>
             <ScheduleIcon />
-          </Icon>
+          </ListItemIcon>
           <MobileDateTimePicker
             clearable={true}
             value={scheduleDate}
@@ -805,9 +804,9 @@ function CreateTask(props: { dispatch: (action: Action) => void }) {
           />
         </ListItemButton>
         <ListItem>
-          <Icon sx={{ paddingRight: "16px" }}>
+          <ListItemIcon sx={{ marginRight: "-10px" }}>
             <TimerIcon />
-          </Icon>
+          </ListItemIcon>
           <TextField
             placeholder="Estimate"
             value={(estimate ?? 0) / 1000}
