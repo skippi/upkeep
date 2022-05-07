@@ -183,7 +183,7 @@ function TaskListPage(props: {
   const [closedTaskName, setClosedTaskName] = useState<string>("");
   const tasks: Task[] = [];
   if (sortedIds.length === 0) {
-    tasks.push(...Object.values(app.tasks));
+    tasks.push(...Object.values(app.tasks).filter(t => !t.deleted));
     tasks.sort((a, b) => a.name.localeCompare(b.name));
   } else {
     tasks.push(...sortedIds.map((tid) => app.tasks[tid]));
